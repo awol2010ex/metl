@@ -1,5 +1,8 @@
 package org.jumpmind.metl.core.util;
 
+import org.jumpmind.db.model.Column;
+import org.jumpmind.db.model.Table;
+
 final public class GeneralUtils {
 
     private GeneralUtils() {
@@ -11,4 +14,13 @@ final public class GeneralUtils {
         return value;
     }
 
+//mysql colmn name lower case error
+    public static void columnNameToUpperCase(Table table){
+        Column[]  columns =table.getColumns();
+        if(columns!=null && columns.length>0){
+            for(Column c :columns){
+                c.setName(c.getName().toUpperCase());
+            }
+        }
+    }
 }

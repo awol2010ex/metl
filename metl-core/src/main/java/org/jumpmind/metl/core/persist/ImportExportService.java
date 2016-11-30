@@ -32,6 +32,7 @@ import org.jumpmind.metl.core.model.Resource;
 import org.jumpmind.metl.core.model.ResourceName;
 import org.jumpmind.metl.core.security.ISecurityService;
 import org.jumpmind.metl.core.security.SecurityConstants;
+import org.jumpmind.metl.core.util.GeneralUtils;
 import org.jumpmind.metl.core.util.MessageException;
 import org.jumpmind.metl.core.util.VersionUtils;
 import org.jumpmind.persist.IPersistenceManager;
@@ -473,6 +474,12 @@ public class ImportExportService extends AbstractService implements IImportExpor
             Table table = databasePlatform.getTableFromCache(null, null, inserts.getTableName(),
                     false);
             excludeInsertColumns(table);
+
+        //mysql colmn name lower case error
+        // --start
+            GeneralUtils.columnNameToUpperCase(table);
+        //--end--
+
             DmlStatement stmt = databasePlatform.createDmlStatement(DmlType.INSERT,
                     table.getCatalog(), table.getSchema(), table.getName(),
                     table.getPrimaryKeyColumns(), table.getColumns(), null, null, true);
@@ -493,6 +500,12 @@ public class ImportExportService extends AbstractService implements IImportExpor
     private void processTableUpdates(TableData updates, ISqlTransaction transaction) {
             Table table = databasePlatform.getTableFromCache(null, null, updates.getTableName(), false);
             excludeUpdateColumns(table);
+
+        //mysql colmn name lower case error
+        // --start
+            GeneralUtils.columnNameToUpperCase(table);
+        //--end--
+
             DmlStatement stmt = databasePlatform.createDmlStatement(DmlType.UPDATE, table.getCatalog(),
                     table.getSchema(), table.getName(), table.getPrimaryKeyColumns(),
                     getUpdateColumns(table), null, null, true);
@@ -519,6 +532,11 @@ public class ImportExportService extends AbstractService implements IImportExpor
         if (deletes != null) {
             Table table = databasePlatform.getTableFromCache(null, null, deletes.getTableName(),
                     false);
+            //mysql colmn name lower case error
+            // --start
+            GeneralUtils.columnNameToUpperCase(table);
+            //--end--
+
             DmlStatement stmt = databasePlatform.createDmlStatement(DmlType.DELETE,
                     table.getCatalog(), table.getSchema(), table.getName(),
                     table.getPrimaryKeyColumns(), getUpdateColumns(table), null, null, true);
