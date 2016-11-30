@@ -55,7 +55,10 @@ import java.util.Date
         // uncomment this if you want to use your local maven repository to test undelivered
         /// changes (like symmetricds changes)
         //mavenLocal()
-        mavenCentral()        
+           
+maven {url "http://maven.aliyun.com/nexus/content/groups/public"}		
+		maven {url "http://repo.spring.io/libs-milestone"}
+		mavenCentral() 
         maven { url "http://maven.vaadin.com/vaadin-addons" }
         maven { url "http://maven.jumpmind.com/repo" }
         maven { url "http://repo.reficio.org/maven" }
@@ -76,7 +79,7 @@ import java.util.Date
         }    
     }
     
-    sourceSets.main.compileClasspath += [configurations.provided]
+    sourceSets.main.compileClasspath += /*[*/configurations.provided/*]*/
     
     uploadArchives {
         repositories.mavenDeployer {
@@ -109,7 +112,7 @@ import java.util.Date
         tasks.withType(Javadoc) {
           options.addStringOption('Xdoclint:none', '-quiet')
           options.addStringOption("sourcepath", "")
-          classpath += [configurations.provided]
+          classpath += /*[*/configurations.provided/*]*/
         }
       }
     }       

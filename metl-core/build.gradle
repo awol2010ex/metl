@@ -11,6 +11,7 @@ dependencies {
 }
 
 dependencies {
+    runtime fileTree(dir: './libs', include: ['*.jar'])
     compile "org.slf4j:slf4j-api:$slf4jVersion"
     compile "org.slf4j:jul-to-slf4j:$slf4jVersion"
     compile "org.slf4j:jcl-over-slf4j:$slf4jVersion"
@@ -36,6 +37,7 @@ dependencies {
     compile "org.jumpmind.symmetric.jdbc:postgresql:$postgresqlVersion"
     compile "net.sourceforge.jtds:jtds:$jtdsVersion"
     compile "net.sf.jt400:jt400:$jt400Version"
+	compile 'mysql:mysql-connector-java:5.1.38'
     compile "org.apache.httpcomponents:httpclient:$httpComponentsVersion"
     compile "org.apache.httpcomponents:httpmime:$httpComponentsVersion"
     compile "org.jumpmind.symmetric.schemaspy:schemaspy:5.0.0"
