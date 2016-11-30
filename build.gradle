@@ -1,0 +1,25 @@
+apply plugin: 'idea'
+apply plugin: 'java'
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+buildscript {
+    repositories {
+        maven{
+            url 'http://repo.spring.io/libs-milestone/'
+        }
+
+        mavenCentral()
+        jcenter{
+            url 'http://jcenter.bintray.com/'
+        }
+    }
+    dependencies {
+        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.3'
+        classpath 'org.asciidoctor:asciidoctorj-pdf:1.5.0-alpha.6'
+        classpath 'fi.jasoft.plugin:gradle-vaadin-plugin:0.11.1'
+        classpath 'com.smokejumperit.gradle.license:Gradle-License-Report:0.0.2'
+        classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
+        classpath 'co.riiid:gradle-github-plugin:0.3.1'
+    }
+}
