@@ -127,8 +127,8 @@ public class ConfigurationSqlService extends AbstractConfigurationService {
                 "r.id, r.name, null, null, null, null, null as flow_id " +
                 "from %1$s_agent_deployment d " +
                 "inner join %1$s_flow f on f.id = d.flow_id " +
-                "inner join %1$s_project_version_dependency d on d.project_version_id = f.project_version_id " +
-                "inner join %1$s_project_version v on v.id = d.target_project_version_id " +
+                "inner join %1$s_project_version_dependency de on de.project_version_id = f.project_version_id " +
+                "inner join %1$s_project_version v on v.id = de.target_project_version_id " +
                 "inner join %1$s_project p on p.id = v.project_id " +
                 "inner join %1$s_resource r on r.project_version_id = v.id " +
                 "where d.agent_id = ? and r.deleted=0 order by 5 "    ,
