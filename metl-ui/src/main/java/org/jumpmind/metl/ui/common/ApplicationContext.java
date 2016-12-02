@@ -44,6 +44,7 @@ import org.jumpmind.metl.ui.views.IComponentDefinitionPlusUIFactory;
 import org.jumpmind.vaadin.ui.common.UiComponent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
+import org.springframework.core.env.Environment;
 
 @UiComponent
 @Scope(value = "ui")
@@ -96,12 +97,15 @@ public class ApplicationContext implements Serializable {
     @Autowired
     String configDir;
 
+    @Autowired
+    Environment env;
+
     User user = new User();
     
     boolean showRunDiagram = true;
     
     FlowName currentFlow;
-    
+
     public IConfigurationService getConfigurationService() {
         return configurationService;
     }
@@ -196,5 +200,9 @@ public class ApplicationContext implements Serializable {
             }
         }
         return readOnly;
+    }
+
+    public Environment getEnv(){
+        return this.env;
     }
 }

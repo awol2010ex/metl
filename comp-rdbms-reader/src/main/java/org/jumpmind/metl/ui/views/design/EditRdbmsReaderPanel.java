@@ -20,6 +20,8 @@
  */
 package org.jumpmind.metl.ui.views.design;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.sql.SQLException;
 
 import javax.sql.DataSource;
@@ -83,7 +85,29 @@ public class EditRdbmsReaderPanel extends AbstractComponentEditPanel {
                 resource.put(BasicDataSourcePropertyConstants.DB_POOL_MIN_IDLE, "2");
                 Datasource dataSourceResource = (Datasource) context.getResourceFactory().create(resource, null);
                 DataSource dataSource = dataSourceResource.reference();
-                platform = JdbcDatabasePlatformFactory.createNewPlatformInstance(dataSource, new SqlTemplateSettings(), false, false);
+
+
+                /*使用自定义factory --start--*/
+                String   customFactory =context.getEnv().getProperty("jdbc.custom.factory");
+                if(customFactory!=null && !"".equals(customFactory.trim())) {
+                    try {
+                        Class fc =Class.forName(customFactory);
+                        Method m =fc.getMethod("createNewPlatformInstance",new Class[]{DataSource.class,SqlTemplateSettings.class,boolean.class,boolean.class});
+                        platform = (IDatabasePlatform)m.invoke(null,dataSource,new SqlTemplateSettings(), false, false);
+                    } catch (ClassNotFoundException e) {
+                       // log.error("",e);
+                    } catch (NoSuchMethodException e) {
+                      //  log.error("",e);
+                    } catch (InvocationTargetException e) {
+                      //  log.error("",e);
+                    } catch (IllegalAccessException e) {
+                      //  log.error("",e);
+                    }
+                }
+
+                if(platform==null)
+             /*--end--*/
+                    platform = JdbcDatabasePlatformFactory.createNewPlatformInstance(dataSource, new SqlTemplateSettings(), false, false);
 
                 queryPanel = new QueryPanel(new IDb() {
 

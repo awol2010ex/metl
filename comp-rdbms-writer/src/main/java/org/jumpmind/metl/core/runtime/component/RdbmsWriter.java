@@ -23,6 +23,8 @@ package org.jumpmind.metl.core.runtime.component;
 
 import static org.apache.commons.lang.StringUtils.isBlank;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -163,6 +165,28 @@ public class RdbmsWriter extends AbstractRdbmsComponentRuntime {
                         throw new RuntimeException("The data source resource has not been configured.  Please configure it.");
                     }
                     DataSource dataSource = (DataSource) getResourceReference();
+
+                    /*使用自定义factory --start--*/
+                    TypedProperties props = this.getTypedProperties();
+                    String   customFactory =props.get("jdbc.custom.factory");
+                    if(customFactory!=null && !"".equals(customFactory.trim())) {
+                        try {
+                            Class fc =Class.forName(customFactory);
+                            Method m =fc.getMethod("createNewPlatformInstance",new Class[]{DataSource.class,SqlTemplateSettings.class,boolean.class,boolean.class});
+                            databasePlatform = (IDatabasePlatform)m.invoke(null,dataSource,new SqlTemplateSettings(), quoteIdentifiers, false);
+                        } catch (ClassNotFoundException e) {
+                            log.error("",e);
+                        } catch (NoSuchMethodException e) {
+                            log.error("",e);
+                        } catch (InvocationTargetException e) {
+                            log.error("",e);
+                        } catch (IllegalAccessException e) {
+                            log.error("",e);
+                        }
+                    }
+
+                    if(databasePlatform==null)
+             /*--end--*/
                     databasePlatform = JdbcDatabasePlatformFactory.createNewPlatformInstance(dataSource, new SqlTemplateSettings(),
                             quoteIdentifiers, false);
                 }

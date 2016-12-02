@@ -3,7 +3,7 @@ apply from: '../metl-assemble/common.gradle'
 configurations {
     jaxbConfig
 }
- 
+
 dependencies {
     jaxbConfig 'org.glassfish.jaxb:jaxb-core:2.2.11'
     jaxbConfig 'org.glassfish.jaxb:jaxb-jxc:2.2.11'
@@ -15,7 +15,7 @@ dependencies {
     compile "org.slf4j:slf4j-api:$slf4jVersion"
     compile "org.slf4j:jul-to-slf4j:$slf4jVersion"
     compile "org.slf4j:jcl-over-slf4j:$slf4jVersion"
-    compile "org.slf4j:slf4j-log4j12:$slf4jVersion"        
+    compile "org.slf4j:slf4j-log4j12:$slf4jVersion"
     compile "org.springframework:spring-context:$springVersion"
     compile group:"org.jumpmind.symmetric", name:"symmetric-util", version:"$symmetricVersion", changing:true
     compile group:"org.jumpmind.symmetric", name:"symmetric-db", version:"$symmetricVersion", changing:true
@@ -28,7 +28,7 @@ dependencies {
     compile "commons-lang:commons-lang:$commonsLangVersion"
     compile "commons-dbcp:commons-dbcp:$commonsDbcpVersion"
     compile "commons-io:commons-io:$commonsIoVersion"
-    compile "commons-net:commons-net:$commonsNetVersion"    
+    compile "commons-net:commons-net:$commonsNetVersion"
     compile "jaxen:jaxen:$jaxenVersion"
     compile "javax.mail:mail:$javaMailVersion"
     compile "org.jdom:jdom2:$jdomVersion"
@@ -37,59 +37,32 @@ dependencies {
     compile "org.jumpmind.symmetric.jdbc:postgresql:$postgresqlVersion"
     compile "net.sourceforge.jtds:jtds:$jtdsVersion"
     compile "net.sf.jt400:jt400:$jt400Version"
-	compile 'mysql:mysql-connector-java:5.1.38'
+    compile 'mysql:mysql-connector-java:5.1.38'
     compile "org.apache.httpcomponents:httpclient:$httpComponentsVersion"
     compile "org.apache.httpcomponents:httpmime:$httpComponentsVersion"
     compile "org.jumpmind.symmetric.schemaspy:schemaspy:5.0.0"
     compile "org.codehaus.groovy:groovy-all:$groovyVersion"
     compile "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
-    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:$jacksonVersion"  
+    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:$jacksonVersion"
     compile "com.jcraft:jsch:0.1.52"
-    compile "oauth.signpost:oauth-signpost:1.2.1.2"    
+    compile "oauth.signpost:oauth-signpost:1.2.1.2"
     compile "org.apache.ant:ant:$antVersion"
-    compile "sshtools:j2ssh-ant:0.2.9"    
-    compile "javax.jms:javax.jms-api:2.0.1"    
+    compile "sshtools:j2ssh-ant:0.2.9"
+    compile "javax.jms:javax.jms-api:2.0.1"
     compile  "org.apache.activemq:activemq-client:$activeMqVersion"
     compile "com.googlecode.json-simple:json-simple:1.1.1"
-    compile "kxml2:kxml2:$kxmlVersion"  
+    compile "kxml2:kxml2:$kxmlVersion"
     compile group: 'org.apache.maven', name: 'maven-aether-provider', version: '3.3.9'
     compile group: 'org.eclipse.aether', name: 'aether-transport-http', version: '1.1.0'
     compile group: 'org.eclipse.aether', name: 'aether-transport-file', version: '1.1.0'
-    compile group: 'org.eclipse.aether', name: 'aether-transport-classpath', version: '1.1.0'    
-    compile group: 'org.eclipse.aether', name: 'aether-connector-basic', version: '1.1.0'    
+    compile group: 'org.eclipse.aether', name: 'aether-transport-classpath', version: '1.1.0'
+    compile group: 'org.eclipse.aether', name: 'aether-connector-basic', version: '1.1.0'
     compile "de.saly:javamail-mock2-halfmock:0.5-beta4"
     compile "com.sun.jersey.contribs.jersey-oauth:oauth-signature:1.19.2"
     compile "org.apache.poi:poi-ooxml:$apachePOIVersion"
     testCompile "org.mockito:mockito-all:$mockitoVersion"
     testCompile "org.powermock:powermock-api-mockito:$powerMockVersion"
-    testCompile "org.powermock:powermock-module-junit4:$powerMockVersion"    
+    testCompile "org.powermock:powermock-module-junit4:$powerMockVersion"
     testCompile "xmlunit:xmlunit:$xmlunitVersion"
 
-    compile project(":metl-patch-db2-97")
-
 }
-
-clean.doFirst {
-    delete "working"
-}
-
-task (schemaspy, dependsOn: 'classes', type: JavaExec) {
-    description 'Generates schema spy output for the Metl configuration data model'
-    main = 'org.jumpmind.metl.core.persist.SchemaSpy'
-    classpath = sourceSets.test.runtimeClasspath
-}
-
-task xsdgen () {
-  doLast {
-    ant.taskdef(name: 'schemagen', classname: 'com.sun.tools.jxc.SchemaGenTask', classpath: configurations.jaxbConfig.asPath)
-    ant.schemagen(
-      srcdir: 'src/main/java/org/jumpmind/metl/core/runtime/component/definition',
-      destdir: 'src/main/resources',
-      includeAntRuntime: 'false'
-    ) {
-      schema(file: "components.xsd", namespace: "")
-    }
-  }
-}
-
-xsdgen.dependsOn compileJava

@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.commons.lang.ObjectUtils;
+
 import org.h2.Driver;
 import org.jumpmind.metl.core.model.Model;
 import org.jumpmind.metl.core.model.ModelAttribute;
@@ -191,11 +191,13 @@ public class Sorter extends AbstractComponentRuntime {
     			Object obj2 = o2.get(sortAttributeId);
     			if ((obj1 instanceof Comparable || obj1 == null)
     					&& (obj2 instanceof Comparable || obj2 == null)) {
-    				return ObjectUtils.compare((Comparable<?>) obj1, (Comparable<?>) obj2);
+    				//return ObjectUtils.compare((Comparable<?>) obj1, (Comparable<?>) obj2);
+					return ((Comparable)obj1).compareTo( (Comparable)obj2);
     			} else {
     				String str1 = obj1 != null ? obj1.toString() : null;
     				String str2 = obj2 != null ? obj2.toString() : null;
-    				return ObjectUtils.compare(str1, str2);
+    				//return ObjectUtils.compare(str1, str2);
+					return str1.compareTo(str2);
     			}
     		}
     	});

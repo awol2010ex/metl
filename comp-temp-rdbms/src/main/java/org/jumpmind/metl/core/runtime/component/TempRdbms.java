@@ -2,6 +2,8 @@ package org.jumpmind.metl.core.runtime.component;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Types;
@@ -29,6 +31,8 @@ import org.jumpmind.metl.core.runtime.Message;
 import org.jumpmind.metl.core.runtime.MisconfiguredException;
 import org.jumpmind.metl.core.runtime.flow.ISendMessageCallback;
 import org.jumpmind.properties.TypedProperties;
+
+import javax.sql.DataSource;
 
 public class TempRdbms extends AbstractRdbmsComponentRuntime  {
 
@@ -152,6 +156,29 @@ public class TempRdbms extends AbstractRdbmsComponentRuntime  {
             } else {
                 ds.setUrl("jdbc:h2:file:./" + databaseName);
             }
+
+
+             /*使用自定义factory --start--*/
+            TypedProperties props = this.getTypedProperties();
+            String   customFactory =props.get("jdbc.custom.factory");
+            if(customFactory!=null && !"".equals(customFactory.trim())) {
+                try {
+                    Class fc =Class.forName(customFactory);
+                    Method m =fc.getMethod("createNewPlatformInstance",new Class[]{DataSource.class,SqlTemplateSettings.class,boolean.class,boolean.class});
+                    databasePlatform = (IDatabasePlatform)m.invoke(null,ds,new SqlTemplateSettings(), true, false);
+                } catch (ClassNotFoundException e) {
+                    log.error("",e);
+                } catch (NoSuchMethodException e) {
+                    log.error("",e);
+                } catch (InvocationTargetException e) {
+                    log.error("",e);
+                } catch (IllegalAccessException e) {
+                    log.error("",e);
+                }
+            }
+
+            if(databasePlatform==null)
+             /*--end--*/
             databasePlatform = JdbcDatabasePlatformFactory.createNewPlatformInstance(ds, new SqlTemplateSettings(), true, false);
 
             Model inputModel = context.getFlowStep().getComponent().getInputModel();

@@ -37,6 +37,8 @@ import static org.jumpmind.db.util.BasicDataSourcePropertyConstants.DB_POOL_URL;
 import static org.jumpmind.db.util.BasicDataSourcePropertyConstants.DB_POOL_USER;
 import static org.jumpmind.db.util.BasicDataSourcePropertyConstants.DB_POOL_VALIDATION_QUERY;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -248,6 +250,29 @@ public class AppConfig extends WebMvcConfigurerAdapter {
     @Scope(value = "singleton", proxyMode = ScopedProxyMode.INTERFACES)
     public IDatabasePlatform configDatabasePlatform() {
         if (configDatabasePlatform == null) {
+
+            /*使用自定义factory --start--*/
+
+            String   customFactory =env.getProperty("jdbc.custom.factory");
+            if(customFactory!=null && !"".equals(customFactory.trim())) {
+                try {
+                    Class fc =Class.forName(customFactory);
+                    Method m =fc.getMethod("createNewPlatformInstance",new Class[]{DataSource.class,SqlTemplateSettings.class,boolean.class,boolean.class});
+                    configDatabasePlatform = (IDatabasePlatform)m.invoke(null,configDataSource(),new SqlTemplateSettings(), true, false);
+                } catch (ClassNotFoundException e) {
+                    log.error("",e);
+                } catch (NoSuchMethodException e) {
+                    log.error("",e);
+                } catch (InvocationTargetException e) {
+                    log.error("",e);
+                } catch (IllegalAccessException e) {
+                    log.error("",e);
+                }
+            }
+
+            if(configDatabasePlatform==null)
+             /*--end--*/
+
             configDatabasePlatform = JdbcDatabasePlatformFactory.createNewPlatformInstance(
                     configDataSource(), new SqlTemplateSettings(), true, false);
         }
@@ -258,6 +283,30 @@ public class AppConfig extends WebMvcConfigurerAdapter {
     @Scope(value = "singleton", proxyMode = ScopedProxyMode.INTERFACES)
     public IDatabasePlatform executionDatabasePlatform() {
         if (executionDatabasePlatform == null) {
+
+            /*使用自定义factory --start--*/
+
+            String   customFactory =env.getProperty("jdbc.custom.factory");
+            if(customFactory!=null && !"".equals(customFactory.trim())) {
+                try {
+                    Class fc =Class.forName(customFactory);
+                    Method m =fc.getMethod("createNewPlatformInstance",new Class[]{DataSource.class,SqlTemplateSettings.class,boolean.class,boolean.class});
+                    executionDatabasePlatform = (IDatabasePlatform)m.invoke(null,executionDataSource(),new SqlTemplateSettings(), true, false);
+                } catch (ClassNotFoundException e) {
+                    log.error("",e);
+                } catch (NoSuchMethodException e) {
+                    log.error("",e);
+                } catch (InvocationTargetException e) {
+                    log.error("",e);
+                } catch (IllegalAccessException e) {
+                    log.error("",e);
+                }
+            }
+
+            if(executionDatabasePlatform==null)
+             /*--end--*/
+
+
             executionDatabasePlatform = JdbcDatabasePlatformFactory.createNewPlatformInstance(
                     executionDataSource(), new SqlTemplateSettings(), true, false);
         }

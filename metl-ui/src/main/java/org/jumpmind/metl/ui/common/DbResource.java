@@ -21,6 +21,8 @@
 package org.jumpmind.metl.ui.common;
 
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.sql.SQLException;
 
 import javax.sql.DataSource;
@@ -31,6 +33,7 @@ import org.jumpmind.db.platform.JdbcDatabasePlatformFactory;
 import org.jumpmind.db.sql.SqlTemplateSettings;
 import org.jumpmind.metl.core.model.Agent;
 import org.jumpmind.metl.core.runtime.resource.IResourceRuntime;
+import org.jumpmind.properties.TypedProperties;
 import org.jumpmind.vaadin.ui.sqlexplorer.IDb;
 
 public class DbResource implements IDb, Serializable {
@@ -43,9 +46,12 @@ public class DbResource implements IDb, Serializable {
 
         IDatabasePlatform platform;
 
-        public DbResource(Agent agent, IResourceRuntime resource) {
+        ApplicationContext context;
+
+        public DbResource(Agent agent, IResourceRuntime resource,ApplicationContext context) {
             this.resource = resource;
             this.agent = agent;
+            this.context=context;
         }
 
         @Override
@@ -57,6 +63,30 @@ public class DbResource implements IDb, Serializable {
         public IDatabasePlatform getPlatform() {
             if (platform == null) {                
                 DataSource dataSource = resource.reference();
+
+
+                 /*使用自定义factory --start--*/
+                String   customFactory =context.getEnv().getProperty("jdbc.custom.factory");
+                if(customFactory!=null && !"".equals(customFactory.trim())) {
+                    try {
+                        Class fc =Class.forName(customFactory);
+                        Method m =fc.getMethod("createNewPlatformInstance",new Class[]{DataSource.class,SqlTemplateSettings.class,boolean.class,boolean.class});
+                        platform = (IDatabasePlatform)m.invoke(null,dataSource,new SqlTemplateSettings(), false, false);
+                    } catch (ClassNotFoundException e) {
+                      //  log.error("",e);
+                    } catch (NoSuchMethodException e) {
+                       // log.error("",e);
+                    } catch (InvocationTargetException e) {
+                      //  log.error("",e);
+                    } catch (IllegalAccessException e) {
+                       // log.error("",e);
+                    }
+                }
+
+                if(platform==null)
+             /*--end--*/
+
+
                 platform = JdbcDatabasePlatformFactory.createNewPlatformInstance(dataSource,
                         new SqlTemplateSettings(), false, false);
             }

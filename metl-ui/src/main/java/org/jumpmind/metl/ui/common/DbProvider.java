@@ -75,7 +75,7 @@ public class DbProvider implements IDbProvider, Serializable {
             Collection<IResourceRuntime> resources = runtime.getDeployedResources();
             for (IResourceRuntime iResource : resources) {
                 if (iResource.getResource().getType().equals(Datasource.TYPE)) {
-                    DbResource db = new DbResource(agent, iResource);
+                    DbResource db = new DbResource(agent, iResource ,context);
                     dbs.add(db);
                 }
             }
