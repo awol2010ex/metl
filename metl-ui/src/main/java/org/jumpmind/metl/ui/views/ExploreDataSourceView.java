@@ -22,12 +22,18 @@ package org.jumpmind.metl.ui.views;
 
 import javax.annotation.PostConstruct;
 
+import com.vaadin.ui.HorizontalSplitPanel;
+import org.jumpmind.db.sql.SqlTemplateSettings;
 import org.jumpmind.metl.ui.common.UIConstants;
 import org.jumpmind.metl.ui.common.ApplicationContext;
 import org.jumpmind.metl.ui.common.Category;
 import org.jumpmind.metl.ui.common.DbProvider;
 import org.jumpmind.metl.ui.common.TopBarLink;
+import org.jumpmind.metl.core.ui.views.custom.CustomSqlExplorer;
 import org.jumpmind.vaadin.ui.common.UiComponent;
+import org.jumpmind.vaadin.ui.sqlexplorer.IDbMenuItem;
+import org.jumpmind.vaadin.ui.sqlexplorer.IDbProvider;
+import org.jumpmind.vaadin.ui.sqlexplorer.ISettingsProvider;
 import org.jumpmind.vaadin.ui.sqlexplorer.SqlExplorer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
@@ -36,6 +42,11 @@ import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
 import com.vaadin.server.FontAwesome;
 import com.vaadin.ui.VerticalLayout;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
 
 @UiComponent
 @Scope("ui")
@@ -48,8 +59,8 @@ public class ExploreDataSourceView extends VerticalLayout implements View {
     ApplicationContext context;
     
     DbProvider dbProvider;
-    
-    SqlExplorer explorer;
+
+    HorizontalSplitPanel explorer=null;
 
     public ExploreDataSourceView() {
         setSizeFull();
@@ -58,15 +69,41 @@ public class ExploreDataSourceView extends VerticalLayout implements View {
     @PostConstruct
     protected void init () {
         dbProvider = new DbProvider(context);
-        explorer = new SqlExplorer(context.getConfigDir(),
-                dbProvider, context.getUser().getLoginId(), UIConstants.DEFAULT_LEFT_SPLIT);
+
+        String customSqlexplorerClass=   context.getEnv().getProperty("ui.custom.sqlexplorer");
+        if(customSqlexplorerClass!=null && !"".equals(customSqlexplorerClass.trim())){
+            try {
+                Class fc =Class.forName(customSqlexplorerClass);
+                Constructor constructor = fc.getConstructor(String.class, IDbProvider.class ,String.class,float.class);
+                explorer =(HorizontalSplitPanel)constructor.newInstance(context.getConfigDir(),dbProvider,context.getUser().getLoginId(),UIConstants.DEFAULT_LEFT_SPLIT);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        }
+        if(explorer==null) {
+            explorer = new SqlExplorer(context.getConfigDir(),
+                    dbProvider, context.getUser().getLoginId(), UIConstants.DEFAULT_LEFT_SPLIT);
+        }
         addComponent(explorer);
     }
 
     @Override
     public void enter(ViewChangeEvent event) {
         dbProvider.refresh();
-        explorer.refresh();
+
+
+        try {
+            Method  me =explorer.getClass().getDeclaredMethod("refresh");
+            me.invoke(explorer);
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        //explorer.refresh();
     }
 
 
