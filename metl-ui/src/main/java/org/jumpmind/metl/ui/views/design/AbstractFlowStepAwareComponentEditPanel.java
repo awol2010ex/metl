@@ -27,10 +27,26 @@ public abstract class AbstractFlowStepAwareComponentEditPanel extends AbstractCo
 
     private static final long serialVersionUID = 1L;
     
-    protected Flow flow;
-    
-    protected FlowStep flowStep;
-    
+    public Flow flow;
+
+    public FlowStep flowStep;
+
+    public Flow getFlow() {
+        return flow;
+    }
+
+    public void setFlow(Flow flow) {
+        this.flow = flow;
+    }
+
+    public FlowStep getFlowStep() {
+        return flowStep;
+    }
+
+    public void setFlowStep(FlowStep flowStep) {
+        this.flowStep = flowStep;
+    }
+
     @Override
     public void makeAwareOf(FlowStep flowStep, Flow flow) {
         this.flowStep = flowStep;

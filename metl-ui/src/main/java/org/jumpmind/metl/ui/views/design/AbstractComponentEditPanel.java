@@ -30,15 +30,52 @@ public abstract class AbstractComponentEditPanel extends VerticalLayout implemen
 
     private static final long serialVersionUID = 1L;
     
-    protected Component component;
-    
-    protected ApplicationContext context;
-    
-    protected PropertySheet propertySheet;
-    
-    protected XMLComponentDefinition componentDefinition;
-    
-    protected boolean readOnly;
+    public Component component;
+
+    public ApplicationContext context;
+
+    public PropertySheet propertySheet;
+
+    public XMLComponentDefinition componentDefinition;
+
+    public Component getComponent() {
+        return component;
+    }
+
+    public void setComponent(Component component) {
+        this.component = component;
+    }
+
+    public ApplicationContext getContext() {
+        return context;
+    }
+
+    public void setContext(ApplicationContext context) {
+        this.context = context;
+    }
+
+    public PropertySheet getPropertySheet() {
+        return propertySheet;
+    }
+
+    public void setPropertySheet(PropertySheet propertySheet) {
+        this.propertySheet = propertySheet;
+    }
+
+    public XMLComponentDefinition getComponentDefinition() {
+        return componentDefinition;
+    }
+
+    public void setComponentDefinition(XMLComponentDefinition componentDefinition) {
+        this.componentDefinition = componentDefinition;
+    }
+
+    @Override
+    public boolean isReadOnly() {
+        return readOnly;
+    }
+
+    public boolean readOnly;
 
     @Override
     public void init(boolean readOnly, Component component, ApplicationContext context, PropertySheet propertySheet) {
@@ -62,6 +99,12 @@ public abstract class AbstractComponentEditPanel extends VerticalLayout implemen
     }
 
     @Override
+    public void setReadOnly(boolean readOnly) {
+        this.readOnly = readOnly;
+    }
+
+    @Override
+
     public void deselected() {
     }
     
