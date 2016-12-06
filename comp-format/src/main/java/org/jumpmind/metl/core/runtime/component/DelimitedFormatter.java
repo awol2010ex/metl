@@ -101,7 +101,14 @@ public class DelimitedFormatter extends AbstractComponentRuntime {
                 try {
                     for (AttributeFormat attr : attributes) {
                         if (attr.getAttribute() != null) {
-                            csvWriter.write(attr.getAttribute().getName());
+                            ModelAttribute at=attr.getAttribute();
+                            /*when  Description  exists ,use Description to write header*/
+                            if(StringUtils.isNotBlank(at.getDescription())){
+                                csvWriter.write(at.getDescription());
+                            }
+                            else {
+                                csvWriter.write(at.getName());
+                            }
                         }
                     }
                 } catch (IOException e) {
