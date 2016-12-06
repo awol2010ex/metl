@@ -211,7 +211,7 @@ public class LoggingPanel extends VerticalLayout implements IUiPanel, IBackgroun
                 String filterValue = filter.getValue();
                 boolean isFiltering = !StringUtils.isBlank(filterValue);
                 Pattern filter = Pattern.compile("(.*)(" + filterValue + ")(.*)");
-                ReversedLinesFileReader reader = new ReversedLinesFileReader(logFile);
+                ReversedLinesFileReader reader = new ReversedLinesFileReader(logFile,4096,"UTF-8");
                 try {
                     int lines = Integer.parseInt(bufferSize.getValue());
                     int counter = 0;
