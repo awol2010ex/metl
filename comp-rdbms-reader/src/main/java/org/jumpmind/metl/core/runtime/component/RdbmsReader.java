@@ -23,6 +23,7 @@ package org.jumpmind.metl.core.runtime.component;
 import static org.apache.commons.lang.StringUtils.isBlank;
 import static org.apache.commons.lang.StringUtils.isNotBlank;
 
+import java.io.Serializable;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -138,11 +139,14 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
          */
         ArrayList<EntityData> outboundPayload = new ArrayList<EntityData>(); // =
                                                                              // null;
+
+        Map<String,Serializable> headers = new HashMap<String,Serializable>();
+
         for (int i = 0; i < inboundRecordCount; i++) {
             Object entity = inboundPayload != null && inboundPayload.hasNext() ? inboundPayload.next() : null;
             ResultSetToEntityDataConverter resultSetToEntityDataConverter = new ResultSetToEntityDataConverter(inputMessage, callback,
-                    unitOfWorkBoundaryReached, outboundPayload);
-            if (passInputRowsThrough) {
+                    unitOfWorkBoundaryReached, outboundPayload,headers);
+            if (passInputRowsThrough && entity!=null) {
                 outboundPayload.add((EntityData) entity);
             }
             for (String sql : getSqls()) {
@@ -153,22 +157,22 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
                 resultSetToEntityDataConverter.setSqlToExecute(sqlToExecute);
                 template.query(sqlToExecute, paramMap, resultSetToEntityDataConverter);
                 if (unitOfWork.equalsIgnoreCase(SQL_STATEMENT)) {
-                    sendLeftOverRows(callback, outboundPayload);
+                    sendLeftOverRows(callback, outboundPayload ,headers);
                     callback.sendControlMessage();
                 }
             }
             if (unitOfWork.equalsIgnoreCase(SQL_SCRIPT)) {
-                sendLeftOverRows(callback, outboundPayload);
+                sendLeftOverRows(callback, outboundPayload,headers);
                 callback.sendControlMessage();
             }
         }
-        sendLeftOverRows(callback, outboundPayload);
+        sendLeftOverRows(callback, outboundPayload,headers);
         
     }
 
-    private void sendLeftOverRows(final ISendMessageCallback callback, ArrayList<EntityData> outboundPayload) {
+    private void sendLeftOverRows(final ISendMessageCallback callback, ArrayList<EntityData> outboundPayload ,Map<String,Serializable>  headers) {
         if (outboundPayload != null && outboundPayload.size() > 0) {
-            callback.sendEntityDataMessage(null, outboundPayload);
+            callback.sendEntityDataMessage(headers, outboundPayload);
             outboundPayload.clear();
         } 
     }
@@ -200,6 +204,10 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
 
             if (matchOnColumnNameOnly) {
                 attributeIds.addAll(getAttributeIds(columnName));
+
+                /*not throws Exception when matchOnColumnNameOnly --start*/
+                attributeFound = true;
+                /*--end*/
             } else {
                 if (StringUtils.isEmpty(tableName)) {
                     throw new MisconfiguredException("Table name could not be determined from metadata or hints.  Please check column and hint.  "
@@ -453,12 +461,15 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
 
         ArrayList<EntityData> payload;
 
+        Map<String, Serializable> messageHeaders;
+
         public ResultSetToEntityDataConverter(Message inputMessage, ISendMessageCallback callback, boolean unitOfWorkLastMessage,
-                ArrayList<EntityData> payload) {
+                ArrayList<EntityData> payload,Map<String, Serializable> messageHeaders) {
             this.inputMessage = inputMessage;
             this.callback = callback;
             this.unitOfWorkLastMessage = unitOfWorkLastMessage;
             this.payload = payload;
+            this.messageHeaders =messageHeaders;
         }
 
         @Override
@@ -466,18 +477,24 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
             ResultSetMetaData meta = rs.getMetaData();
             Map<Integer, String> columnHints = getSqlColumnEntityHints(sqlToExecute);
             ArrayList<String> attributeIds = getAttributeIds(sqlToExecute, meta, columnHints);
+
+            HashMap<String,String> attributesMap=null ;//header map
+
             long ts = System.currentTimeMillis();
             while (rs.next()) {
                 if (outputRecCount++ % rowsPerMessage == 0 && payload != null && !payload.isEmpty()) {
-                    callback.sendEntityDataMessage(null, payload);
+                    callback.sendEntityDataMessage(messageHeaders, payload);
                     payload.clear();
                 }
 
                 getComponentStatistics().incrementNumberEntitiesProcessed(threadNumber);
 
                 EntityData rowData = new EntityData();
+
+
+
                 rowData.setChangeType(entityChangeType);
-                for (int i = 1; i <= meta.getColumnCount(); i++) {
+                for (int i = 1,s=meta.getColumnCount(); i <=s ; i++) {
                     String attributeId = attributeIds.get(i - 1);
                     if (isNotBlank(attributeId)) {
                         Object value = JdbcUtils.getResultSetValue(rs, i);
@@ -487,6 +504,29 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
                         rowData.put(attributeId, value);
                     }
                 }
+
+
+                if(attributesMap==null) {
+                    attributesMap = new HashMap<String, String>();
+                    Set<ModelEntity> attributes = RdbmsReader.this.getModelEntities(rowData);
+                    for (ModelEntity entity : attributes) {
+                        for (ModelAttribute attribute : entity.getModelAttributes()) {
+                            attributesMap.put(attribute.getId(), entity.getName() + "." + attribute.getName());
+                        }
+
+                    }
+                }
+                Iterator<Map.Entry<String,String>>  it=attributesMap.entrySet().iterator();
+                while(it.hasNext()){
+
+                    Map.Entry<String,String>   en=   it.next();
+                    messageHeaders.put(attributesMap.get(en.getKey()), String.valueOf( rowData.get(en.getKey())));
+
+                }
+
+
+
+
                 rowReadDuringHandle++;
                 payload.add(rowData);
                 if (context.getDeployment() != null && context.getDeployment().asLogLevel() == LogLevel.DEBUG) {
