@@ -1,6 +1,8 @@
-*/.gradle
+**/.gradle
 /.DS_Store
 .idea
 **/*.iml
 **/*.ipr
+**/*.iws
 metl-war\src\main\webapp
+build
