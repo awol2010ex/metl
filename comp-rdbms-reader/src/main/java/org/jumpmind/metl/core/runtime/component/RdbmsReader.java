@@ -478,7 +478,7 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
             Map<Integer, String> columnHints = getSqlColumnEntityHints(sqlToExecute);
             ArrayList<String> attributeIds = getAttributeIds(sqlToExecute, meta, columnHints);
 
-            HashMap<String,String> attributesMap=null ;//header map
+            Map<String,String[]> attributesMap=null ;//header map
 
             long ts = System.currentTimeMillis();
             while (rs.next()) {
@@ -507,21 +507,30 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
 
 
                 if(attributesMap==null) {
-                    attributesMap = new HashMap<String, String>();
+                    attributesMap = new HashMap<String, String[]>();
                     Set<ModelEntity> attributes = RdbmsReader.this.getModelEntities(rowData);
                     for (ModelEntity entity : attributes) {
                         for (ModelAttribute attribute : entity.getModelAttributes()) {
-                            attributesMap.put(attribute.getId(), entity.getName() + "." + attribute.getName());
+
+                            attributesMap.put(attribute.getId(), new String[]{entity.getName() , attribute.getName()});
                         }
 
                     }
                 }
-                Iterator<Map.Entry<String,String>>  it=attributesMap.entrySet().iterator();
+                Iterator<Map.Entry<String,String[]>>  it=attributesMap.entrySet().iterator();
                 while(it.hasNext()){
 
-                    Map.Entry<String,String>   en=   it.next();
-                    messageHeaders.put(attributesMap.get(en.getKey()), String.valueOf( rowData.get(en.getKey())));
+                    Map.Entry<String,String[]>   en=   it.next();
+                    String[]  attr =attributesMap.get(en.getKey());
+                    String entityName= attr[0];
+                    String attrName =attr[1];
+                    String value =String.valueOf( rowData.get(en.getKey()));
+                    messageHeaders.put(entityName+"."+attrName, value);
 
+                    if(messageHeaders.get(entityName)==null){
+                        messageHeaders.put(entityName ,new HashMap<String,String>());
+                    }
+                    ((Map<String,String>)messageHeaders.get(entityName)).put(attrName,value);
                 }
 
 
