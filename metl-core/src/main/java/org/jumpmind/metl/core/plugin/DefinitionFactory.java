@@ -20,21 +20,17 @@
  */
 package org.jumpmind.metl.core.plugin;
 
+import static org.apache.commons.lang.StringUtils.isBlank;
 import static org.jumpmind.metl.core.runtime.component.ComponentSettingsConstants.*;
 import static org.apache.commons.lang.StringUtils.isNotBlank;
 import static org.jumpmind.metl.core.plugin.PluginConstants.*;
+
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
@@ -51,6 +47,7 @@ import org.jumpmind.metl.core.model.ProjectVersionDefinitionPlugin;
 import org.jumpmind.metl.core.persist.IConfigurationService;
 import org.jumpmind.metl.core.plugin.XMLSetting.Type;
 import org.jumpmind.metl.core.util.VersionUtils;
+import org.jumpmind.properties.TypedProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,9 +74,34 @@ public class DefinitionFactory implements IDefinitionFactory {
         this.pluginManager = pluginManager;
     }
 
+    protected String getConfigDir() {
+        String configDir = System.getProperty("org.jumpmind.metl.ui.init.config.dir");
+        if (isBlank(configDir)) {
+            configDir = System.getProperty("user.dir");
+        }
+
+        if (isBlank(System.getProperty("h2.baseDir"))) {
+            System.setProperty("h2.baseDir", configDir);
+        }
+        return configDir;
+    }
+
+    protected Properties loadProperties() {
+        Properties properties = new Properties();
+        String configDir = getConfigDir();
+        File configFile = new File(configDir, "metl.properties");
+        if (configFile.exists()) {
+            properties = new TypedProperties(configFile);
+        }
+        return properties;
+    }
     @Override
     synchronized public void refresh() {
-        pluginManager.refresh();
+
+        String appDevelopWithoutplugins =loadProperties().getProperty("app.develop.withoutplugins");
+        if(!"true".equals(appDevelopWithoutplugins)) {
+            pluginManager.refresh();
+        }
         definitionsByProjectVersionIdById = new HashMap<>();
         definitionsByPluginId = new HashMap<>();
         if (pluginManager != null && configurationService != null) {
@@ -95,88 +117,95 @@ public class DefinitionFactory implements IDefinitionFactory {
         long ts = System.currentTimeMillis();
         loadComponentsForClassloader(projectVersionId, "org.jumpmind.metl:metl-core:" + VersionUtils.getCurrentVersion(),
                 getClass().getClassLoader());
-        List<PluginRepository> remoteRepostiories = configurationService.findPluginRepositories();
-        List<ProjectVersionDefinitionPlugin> pvcps = configurationService.findProjectVersionComponentPlugins(projectVersionId);
-        GenericVersionScheme versionScheme = new GenericVersionScheme();
-        for (Plugin configuredPlugin : configurationService.findPlugins()) {
-            boolean matched = false;
-            for (ProjectVersionDefinitionPlugin pvcp : pvcps) {
-                if (pvcp.matches(configuredPlugin)) {
-                    try {
-                        matched = true;
-                        String latestVersion = pluginManager.getLatestLocalVersion(pvcp.getArtifactGroup(), pvcp.getArtifactName());
-                        if (isNotBlank(latestVersion)) {
-                            Version version = versionScheme.parseVersion(latestVersion);
-                            if (!pvcp.getArtifactVersion().equals(latestVersion)) {
-                                Version previousVersion = versionScheme.parseVersion(pvcp.getArtifactVersion());
-                                if (previousVersion.compareTo(version) == -1) {
-                                    if (!pvcp.isPinVersion()) {
-                                        logger.info("Upgrading {}:{} from {} to {}", pvcp.getArtifactGroup(), pvcp.getArtifactName(),
-                                                pvcp.getArtifactVersion(), latestVersion);
-                                        pvcp.setArtifactVersion(latestVersion);
-                                        pvcp.setLatestArtifactVersion(latestVersion);
-                                    } else {
-                                        logger.info("Not upgrading {}:{} from {} to {} because the version is pinned",
-                                                pvcp.getArtifactGroup(), pvcp.getArtifactName(), pvcp.getArtifactVersion(), latestVersion);
-                                        pvcp.setLatestArtifactVersion(latestVersion);
+
+        String appDevelopWithoutplugins =loadProperties().getProperty("app.develop.withoutplugins");
+        if(!"true".equals(appDevelopWithoutplugins)) {
+            {
+                List<PluginRepository> remoteRepostiories = configurationService.findPluginRepositories();
+                List<ProjectVersionDefinitionPlugin> pvcps = configurationService.findProjectVersionComponentPlugins(projectVersionId);
+                GenericVersionScheme versionScheme = new GenericVersionScheme();
+                for (Plugin configuredPlugin : configurationService.findPlugins()) {
+                    boolean matched = false;
+                    for (ProjectVersionDefinitionPlugin pvcp : pvcps) {
+                        if (pvcp.matches(configuredPlugin)) {
+                            try {
+                                matched = true;
+                                String latestVersion = pluginManager.getLatestLocalVersion(pvcp.getArtifactGroup(), pvcp.getArtifactName());
+                                if (isNotBlank(latestVersion)) {
+                                    Version version = versionScheme.parseVersion(latestVersion);
+                                    if (!pvcp.getArtifactVersion().equals(latestVersion)) {
+                                        Version previousVersion = versionScheme.parseVersion(pvcp.getArtifactVersion());
+                                        if (previousVersion.compareTo(version) == -1) {
+                                            if (!pvcp.isPinVersion()) {
+                                                logger.info("Upgrading {}:{} from {} to {}", pvcp.getArtifactGroup(), pvcp.getArtifactName(),
+                                                        pvcp.getArtifactVersion(), latestVersion);
+                                                pvcp.setArtifactVersion(latestVersion);
+                                                pvcp.setLatestArtifactVersion(latestVersion);
+                                            } else {
+                                                logger.info("Not upgrading {}:{} from {} to {} because the version is pinned",
+                                                        pvcp.getArtifactGroup(), pvcp.getArtifactName(), pvcp.getArtifactVersion(), latestVersion);
+                                                pvcp.setLatestArtifactVersion(latestVersion);
+                                            }
+                                            configurationService.save(pvcp);
+                                        } else {
+                                            logger.info(
+                                                    "The latest version in the local repository was older than the configured version.  The configured version was {}:{}:{}.  "
+                                                            + "The latest version is {}",
+                                                    pvcp.getArtifactGroup(), pvcp.getArtifactName(), pvcp.getArtifactVersion(), latestVersion);
+                                        }
                                     }
-                                    configurationService.save(pvcp);
-                                } else {
-                                    logger.info(
-                                            "The latest version in the local repository was older than the configured version.  The configured version was {}:{}:{}.  "
-                                                    + "The latest version is {}",
-                                            pvcp.getArtifactGroup(), pvcp.getArtifactName(), pvcp.getArtifactVersion(), latestVersion);
                                 }
+
+                                load(projectVersionId, pvcp.getArtifactGroup(), pvcp.getArtifactName(), pvcp.getArtifactVersion(),
+                                        remoteRepostiories);
+
+                            } catch (InvalidVersionSpecificationException e) {
+                                logger.error("", e);
                             }
                         }
-
-                        load(projectVersionId, pvcp.getArtifactGroup(), pvcp.getArtifactName(), pvcp.getArtifactVersion(),
-                                remoteRepostiories);
-
-                    } catch (InvalidVersionSpecificationException e) {
-                        logger.error("", e);
                     }
-                }
-            }
 
-            if (!matched) {
-                String latestVersion = pluginManager.getLatestLocalVersion(configuredPlugin.getArtifactGroup(),
-                        configuredPlugin.getArtifactName());
-                if (latestVersion != null) {
-                    String pluginId = load(projectVersionId, configuredPlugin.getArtifactGroup(), configuredPlugin.getArtifactName(),
-                            latestVersion, remoteRepostiories);
+                    if (!matched) {
+                        String latestVersion = pluginManager.getLatestLocalVersion(configuredPlugin.getArtifactGroup(),
+                                configuredPlugin.getArtifactName());
+                        if (latestVersion != null) {
+                            String pluginId = load(projectVersionId, configuredPlugin.getArtifactGroup(), configuredPlugin.getArtifactName(),
+                                    latestVersion, remoteRepostiories);
 
-                    List<XMLAbstractDefinition> definitions = definitionsByPluginId.get(pluginId);
-                    if (definitions != null) {
-                        for (XMLAbstractDefinition definition : definitions) {
-                            ProjectVersionDefinitionPlugin plugin = new ProjectVersionDefinitionPlugin();
-                            plugin.setProjectVersionId(projectVersionId);
-                            plugin.setDefinitionTypeId(definition.getId());
-                            plugin.setDefinitionName(definition.getName());
-                            plugin.setArtifactGroup(configuredPlugin.getArtifactGroup());
-                            plugin.setArtifactName(configuredPlugin.getArtifactName());
-                            plugin.setArtifactVersion(latestVersion);
-                            plugin.setLatestArtifactVersion(latestVersion);
-                            if (definition instanceof XMLComponentDefinition) {
-                                plugin.setDefinitionType(DEFINTION_TYPE_COMPONENT);
-                            } else if (definition instanceof XMLResourceDefinition) {
-                                plugin.setDefinitionType(DEFINTION_TYPE_RESOURCE);
+                            List<XMLAbstractDefinition> definitions = definitionsByPluginId.get(pluginId);
+                            if (definitions != null) {
+                                for (XMLAbstractDefinition definition : definitions) {
+                                    ProjectVersionDefinitionPlugin plugin = new ProjectVersionDefinitionPlugin();
+                                    plugin.setProjectVersionId(projectVersionId);
+                                    plugin.setDefinitionTypeId(definition.getId());
+                                    plugin.setDefinitionName(definition.getName());
+                                    plugin.setArtifactGroup(configuredPlugin.getArtifactGroup());
+                                    plugin.setArtifactName(configuredPlugin.getArtifactName());
+                                    plugin.setArtifactVersion(latestVersion);
+                                    plugin.setLatestArtifactVersion(latestVersion);
+                                    if (definition instanceof XMLComponentDefinition) {
+                                        plugin.setDefinitionType(DEFINTION_TYPE_COMPONENT);
+                                    } else if (definition instanceof XMLResourceDefinition) {
+                                        plugin.setDefinitionType(DEFINTION_TYPE_RESOURCE);
+                                    } else {
+                                        throw new IllegalStateException("Unknown definition type");
+                                    }
+                                    configurationService.save(plugin);
+                                }
                             } else {
-                                throw new IllegalStateException("Unknown definition type");
+                                logger.warn("Could not find a component in the {} plugin", pluginId);
                             }
-                            configurationService.save(plugin);
-                        }
-                    } else {
-                        logger.warn("Could not find a component in the {} plugin", pluginId);
-                    }
 
-                } else {
-                    logger.warn("Could not find a registered plugin for {}:{}", configuredPlugin.getArtifactGroup(),
-                            configuredPlugin.getArtifactName());
+                        } else {
+                            logger.warn("Could not find a registered plugin for {}:{}", configuredPlugin.getArtifactGroup(),
+                                    configuredPlugin.getArtifactName());
+                        }
+                    }
                 }
             }
         }
         logger.info("It took {}ms to refresh plugins for project version: {}", (System.currentTimeMillis() - ts), projectVersionId);
+
     }
 
     @Override

@@ -6,3 +6,4 @@
 **/*.iws
 metl-war\src\main\webapp
 build
+**/working

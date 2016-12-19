@@ -67,6 +67,10 @@ dependencies {
     testCompile "xmlunit:xmlunit:$xmlunitVersion"
 
     compile project(":metl-patch-db2-97")
+	
+	compile("org.apache.kafka:kafka-clients:0.10.1.0"){
+	     exclude group: 'org.slf4j'
+	}
 
 }
 

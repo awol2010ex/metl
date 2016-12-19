@@ -122,44 +122,46 @@ public class AppInitializer implements WebApplicationInitializer, ServletContext
     }
 
     protected void initPlugins(WebApplicationContext ctx) {
-        InputStream is = ctx.getServletContext().getResourceAsStream("/plugins.zip");
-        if (is != null) {
-            ZipInputStream zip = null;
-            try {
-                zip = new ZipInputStream(is);
-                ZipEntry entry = null;
-                File dir = new File(getConfigDir(false), AppConstants.PLUGINS_DIR);
-                for (entry = zip.getNextEntry(); entry != null; entry = zip.getNextEntry()) {
-                    File f = new File(dir, entry.getName());
-                    if (!f.exists()) {
-                        if (entry.isDirectory()) {
-                            f.mkdirs();
-                        } else {
-                            getLogger().info("Extracting: " + f.getAbsolutePath());
-                            f.getParentFile().mkdirs();
-                            OutputStream os = new BufferedOutputStream(new FileOutputStream(f));
-                            try {
-                                final byte buffer[] = new byte[4096];
-                                int readCount;
-                                while ((readCount = zip.read(buffer)) > 0) {
-                                    os.write(buffer, 0, readCount);
+        String appDevelopWithoutplugins =ctx.getEnvironment().getProperty("app.develop.withoutplugins");
+        if(!"true".equals(appDevelopWithoutplugins)) {
+            InputStream is = ctx.getServletContext().getResourceAsStream("/plugins.zip");
+            if (is != null) {
+                ZipInputStream zip = null;
+                try {
+                    zip = new ZipInputStream(is);
+                    ZipEntry entry = null;
+                    File dir = new File(getConfigDir(false), AppConstants.PLUGINS_DIR);
+                    for (entry = zip.getNextEntry(); entry != null; entry = zip.getNextEntry()) {
+                        File f = new File(dir, entry.getName());
+                        if (!f.exists()) {
+                            if (entry.isDirectory()) {
+                                f.mkdirs();
+                            } else {
+                                getLogger().info("Extracting: " + f.getAbsolutePath());
+                                f.getParentFile().mkdirs();
+                                OutputStream os = new BufferedOutputStream(new FileOutputStream(f));
+                                try {
+                                    final byte buffer[] = new byte[4096];
+                                    int readCount;
+                                    while ((readCount = zip.read(buffer)) > 0) {
+                                        os.write(buffer, 0, readCount);
+                                    }
+                                } finally {
+                                    os.close();
                                 }
-                            } finally {
-                                os.close();
                             }
                         }
                     }
+                } catch (RuntimeException e) {
+                    throw e;
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                } finally {
+                    IOUtils.closeQuietly(zip);
                 }
-            } catch (RuntimeException e) {
-                throw e;
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            } finally {
-                IOUtils.closeQuietly(zip);
             }
+            ctx.getBean(IPluginManager.class).init();
         }
-        
-        ctx.getBean(IPluginManager.class).init();
         ctx.getBean(IDefinitionFactory.class).refresh();
     }
 

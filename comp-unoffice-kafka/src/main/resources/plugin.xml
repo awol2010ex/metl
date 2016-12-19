@@ -1,0 +1,122 @@
+<!--
+
+    Licensed to JumpMind Inc under one or more contributor
+    license agreements.  See the NOTICE file distributed
+    with this work for additional information regarding
+    copyright ownership.  JumpMind Inc licenses this file
+    to you under the GNU General Public License, version 3.0 (GPLv3)
+    (the "License"); you may not use this file except in compliance
+    with the License.
+
+    You should have received a copy of the GNU General Public License,
+    version 3.0 (GPLv3) along with this library; if not, see
+    <http://www.gnu.org/licenses/>.
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<definitions>
+  <component category='READER'
+             id='UnOffice Kafka Reader'
+             inputMessageType='text'
+             inputOutputModelsMatch='false'
+             outputMessageType='text'>
+    <name>UnOffice Kafka Reader</name>
+    <className>com.unoffice.comp.kafka.runtime.UnOfficeKafkaClient</className>
+    <keywords>hardcode</keywords>
+    <description></description>
+    <settings>
+      <setting id='bootstrap.servers'
+               required='true'
+               type='text'>
+        <name>bootstrap servers</name>
+        <defaultValue>localhost:9092</defaultValue>
+      </setting>
+      <setting id='topic'
+               required='true'
+               type='text'>
+        <name>topic</name>
+        <defaultValue>topic1</defaultValue>
+      </setting>
+
+      <setting id='group.id'
+               required='true'
+               type='text'>
+        <name>group id</name>
+        <defaultValue>test</defaultValue>
+      </setting>
+
+
+
+      <setting id='enable.auto.commit'
+               required='true'
+               type='boolean'>
+        <name>enable auto commit</name>
+        <defaultValue>true</defaultValue>
+      </setting>
+
+      <setting id='auto.commit.interval.ms'
+               required='true'
+               type='integer'>
+        <name>auto commit interval(ms)</name>
+        <defaultValue>1000</defaultValue>
+      </setting>
+
+
+      <setting id='session.timeout.ms'
+               required='true'
+               type='integer'>
+        <name>session timeout(ms)</name>
+        <defaultValue>30000</defaultValue>
+      </setting>
+
+      <setting id='key.deserializer'
+               required='true'
+               type='text'>
+        <name>key deserializer</name>
+        <defaultValue>org.apache.kafka.common.serialization.StringDeserializer</defaultValue>
+      </setting>
+
+      <setting id='value.deserializer'
+               required='true'
+               type='text'>
+        <name>value deserializer</name>
+        <defaultValue>org.apache.kafka.common.serialization.StringDeserializer</defaultValue>
+      </setting>
+
+
+      <setting id='control.message.on.text.send'
+               required='false'
+               type='boolean'>
+        <name>Send Control Message on Text Send</name>
+        <defaultValue>false</defaultValue>
+      </setting>
+
+
+      <setting id='run.when'
+               required='false'
+               type='choice'>
+        <name>Run When</name>
+        <defaultValue>PER UNIT OF WORK</defaultValue>
+        <choices>
+          <choice>PER UNIT OF WORK</choice>
+          <choice>PER MESSAGE</choice>
+        </choices>
+      </setting>
+
+      <setting id='rows.per.message'
+               required='false'
+               type='integer'>
+        <name>Rows/Msg</name>
+        <defaultValue>1000</defaultValue>
+      </setting>
+
+    </settings>
+  </component>
+
+</definitions>
