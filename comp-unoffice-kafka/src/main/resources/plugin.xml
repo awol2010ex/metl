@@ -23,11 +23,11 @@
 <definitions>
   <component category='READER'
              id='UnOffice Kafka Reader'
-             inputMessageType='text'
+             inputMessageType='any'
              inputOutputModelsMatch='false'
              outputMessageType='text'>
     <name>UnOffice Kafka Reader</name>
-    <className>com.unoffice.comp.kafka.runtime.UnOfficeKafkaClient</className>
+    <className>com.unoffice.comp.kafka.runtime.UnOfficeKafkaReader</className>
     <keywords>hardcode</keywords>
     <description></description>
     <settings>
