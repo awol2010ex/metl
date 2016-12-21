@@ -62,8 +62,6 @@ import org.jumpmind.metl.core.runtime.AgentManager;
 import org.jumpmind.metl.core.runtime.IAgentManager;
 import org.jumpmind.metl.core.runtime.component.ComponentRuntimeFactory;
 import org.jumpmind.metl.core.runtime.component.IComponentRuntimeFactory;
-import org.jumpmind.metl.core.runtime.resource.IResourceFactory;
-import org.jumpmind.metl.core.runtime.resource.ResourceFactory;
 import org.jumpmind.metl.core.runtime.web.HttpRequestMappingRegistry;
 import org.jumpmind.metl.core.runtime.web.IHttpRequestMappingRegistry;
 import org.jumpmind.metl.core.security.ISecurityService;
@@ -121,8 +119,6 @@ public class AppConfig extends WebMvcConfigurerAdapter {
     IImportExportService importExportService;
 
     IComponentRuntimeFactory componentRuntimeFactory;
-
-    IResourceFactory resourceFactory;
 
     IPersistenceManager persistenceManager;
     
@@ -431,19 +427,9 @@ public class AppConfig extends WebMvcConfigurerAdapter {
 
     @Bean
     @Scope(value = "singleton", proxyMode = ScopedProxyMode.INTERFACES)
-    public IResourceFactory resourceFactory() {
-        if (resourceFactory == null) {
-            resourceFactory = new ResourceFactory();
-        }
-        return resourceFactory;
-    }
-
-
-    @Bean
-    @Scope(value = "singleton", proxyMode = ScopedProxyMode.INTERFACES)
     public IAgentManager agentManager() {
         IAgentManager agentManager = new AgentManager(configurationService(), executionService(),
-                componentRuntimeFactory(), componentDefinitionPlusUIFactory(), resourceFactory(),
+                componentRuntimeFactory(), componentDefinitionPlusUIFactory(), 
                 httpRequestMappingRegistry());
         return agentManager;
     }

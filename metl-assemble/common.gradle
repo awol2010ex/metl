@@ -24,7 +24,7 @@ import java.util.Date
     sourceCompatibility=1.8
     targetCompatibility=1.8
     
-    if (project.name.startsWith('comp')) {
+    if (project.name.startsWith('comp') || project.name.startsWith('resource')) {
         apply plugin: 'maven-publish'
         publishing {
             publications {
@@ -55,10 +55,10 @@ import java.util.Date
         // uncomment this if you want to use your local maven repository to test undelivered
         /// changes (like symmetricds changes)
         //mavenLocal()
-           
-maven {url "http://maven.aliyun.com/nexus/content/groups/public"}		
+
+maven {url "http://maven.aliyun.com/nexus/content/groups/public"}
 		maven {url "http://repo.spring.io/libs-milestone"}
-		mavenCentral() 
+		mavenCentral()
         maven { url "http://maven.vaadin.com/vaadin-addons" }
         maven { url "http://maven.jumpmind.com/repo" }
         maven { url "http://repo.reficio.org/maven" }
