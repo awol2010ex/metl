@@ -16,9 +16,9 @@ import java.util.Properties;
  * UnOffice Kafka Reader
  * Created by User on 2016/12/14.
  */
-public class UnOfficeKafkaReader extends AbstractComponentRuntime {
+public class UnOfficeKafkaConsumer extends AbstractComponentRuntime {
 
-    public static final String TYPE = "UnOffice Kafka Reader";
+    public static final String TYPE = "UnOffice Kafka Consumer";
 
     public static final String SETTING_CONTROL_MESSAGE_ON_TEXT_SEND = "control.message.on.text.send";
 
@@ -74,6 +74,7 @@ public class UnOfficeKafkaReader extends AbstractComponentRuntime {
 
     @Override
     public void start() {
+        super.start();
         textRowsPerMessage = context.getFlowStep().getComponent().getInt(ROWS_PER_MESSAGE, 1000);
         controlMessageOnTextSend = context.getFlowStep().getComponent().getBoolean(SETTING_CONTROL_MESSAGE_ON_TEXT_SEND, false);
         runWhen = getComponent().get(RUN_WHEN, PER_UNIT_OF_WORK);

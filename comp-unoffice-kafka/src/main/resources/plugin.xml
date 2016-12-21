@@ -22,12 +22,12 @@
 -->
 <definitions>
   <component category='READER'
-             id='UnOffice Kafka Reader'
+             id='UnOffice Kafka Consumer'
              inputMessageType='any'
              inputOutputModelsMatch='false'
              outputMessageType='text'>
-    <name>UnOffice Kafka Reader</name>
-    <className>com.unoffice.comp.kafka.runtime.UnOfficeKafkaReader</className>
+    <name>UnOffice Kafka Consumer</name>
+    <className>com.unoffice.comp.kafka.runtime.UnOfficeKafkaConsumer</className>
     <keywords>hardcode</keywords>
     <description></description>
     <settings>
@@ -118,5 +118,120 @@
 
     </settings>
   </component>
+  <component category='WRITER'
+             id='UnOffice Kafka Producer'
+             inputMessageType='entity'
+             inputOutputModelsMatch='false'
+             outputMessageType='text'
+             supportsMultipleThreads='true'>
+    <name>UnOffice Kafka Producer</name>
+    <className>com.unoffice.comp.kafka.runtime.UnOfficeKafkaProducer</className>
+    <keywords>hardcode</keywords>
+    <description></description>
+    <settings>
+      <setting id='bootstrap.servers'
+               required='true'
+               type='text'>
+        <name>bootstrap servers</name>
+        <defaultValue>localhost:9092</defaultValue>
+      </setting>
 
+      <setting id='key.deserializer'
+               required='true'
+               type='text'>
+        <name>key deserializer</name>
+        <defaultValue>org.apache.kafka.common.serialization.StringSerializer</defaultValue>
+      </setting>
+
+      <setting id='value.deserializer'
+               required='true'
+               type='text'>
+        <name>value deserializer</name>
+        <defaultValue>org.apache.kafka.common.serialization.StringSerializer</defaultValue>
+      </setting>
+
+
+      <setting id='control.message.on.text.send'
+               required='false'
+               type='boolean'>
+        <name>Send Control Message on Text Send</name>
+        <defaultValue>false</defaultValue>
+      </setting>
+
+      <setting id='acks'
+               required='false'
+               type='text'>
+        <name>acks</name>
+        <defaultValue>all</defaultValue>
+      </setting>
+
+      <setting id='retries'
+               required='false'
+               type='integer'>
+        <name>retries(times)</name>
+        <defaultValue>0</defaultValue>
+      </setting>
+
+      <setting id='batch.size'
+               required='false'
+               type='long'>
+        <name>batch size(byte)</name>
+        <defaultValue>16384</defaultValue>
+      </setting>
+
+      <setting id='linger.ms'
+               required='false'
+               type='integer'>
+        <name>linger(ms)</name>
+        <defaultValue>1</defaultValue>
+      </setting>
+
+      <setting id='buffer.memory'
+               required='false'
+               type='long'>
+        <name>buffer memory</name>
+        <defaultValue>33554432</defaultValue>
+      </setting>
+
+      <setting id='topic'
+               required='true'
+               type='text'>
+        <name>topic</name>
+        <defaultValue>topic1</defaultValue>
+      </setting>
+
+
+      <setting id='key.attribute.name'
+               required='true'
+               type='text'>
+        <name>Attribute Name for Key</name>
+
+      </setting>
+
+      <setting id='value.attribute.name'
+               required='true'
+               type='text'>
+        <name>Attribute Name for Value</name>
+
+      </setting>
+
+      <setting id='run.when'
+               required='false'
+               type='choice'>
+        <name>Run When</name>
+        <defaultValue>PER UNIT OF WORK</defaultValue>
+        <choices>
+          <choice>PER UNIT OF WORK</choice>
+          <choice>PER MESSAGE</choice>
+        </choices>
+      </setting>
+
+      <setting id='rows.per.message'
+               required='false'
+               type='integer'>
+        <name>Rows/Msg</name>
+        <defaultValue>1000</defaultValue>
+      </setting>
+    </settings>
+   </component>
 </definitions>

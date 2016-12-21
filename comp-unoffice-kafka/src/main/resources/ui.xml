@@ -22,7 +22,10 @@
 -->
 <ui>
 
-    <component-ui id="UnOffice Kafka Reader UI" componentId="UnOffice Kafka Reader">
+    <component-ui id="UnOffice Kafka Consumer UI" componentId="UnOffice Kafka Consumer">
         <iconImage>/unoffice/comp/kafka/metl-unoffice-kafka-48x48-color.png</iconImage>
-    </component-ui>    
+    </component-ui>
+    <component-ui id="UnOffice Kafka Producer UI" componentId="UnOffice Kafka Producer">
+        <iconImage>/unoffice/comp/kafka/metl-unoffice-kafka-48x48-color.png</iconImage>
+    </component-ui>
 </ui>
