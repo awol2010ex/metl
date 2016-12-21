@@ -40,7 +40,8 @@ public class XMLSetting implements Serializable {
     @XmlEnum
     public enum Type {
         @XmlEnumValue("text")TEXT, 
-        @XmlEnumValue("integer")INTEGER, 
+        @XmlEnumValue("integer")INTEGER,
+        @XmlEnumValue("long")LONG,
         @XmlEnumValue("boolean")BOOLEAN, 
         @XmlEnumValue("choice")CHOICE, 
         @XmlEnumValue("password")PASSWORD, 

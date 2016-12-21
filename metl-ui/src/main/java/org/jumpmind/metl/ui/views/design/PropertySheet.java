@@ -557,6 +557,21 @@ public class PropertySheet extends AbsoluteLayout {
                     integerField.setReadOnly(readOnly);
                     formLayout.addComponent(integerField);
                     break;
+                case LONG:
+                    ImmediateUpdateTextField longField = new ImmediateUpdateTextField(definition.getName()) {
+                        private static final long serialVersionUID = 1L;
+
+                        protected void save(String text) {
+                            saveSetting(definition.getId(), text, obj);
+                        };
+                    };
+                    longField.setConverter(Long.class);
+                    longField.setValue(obj.get(definition.getId(), definition.getDefaultValue()));
+                    longField.setRequired(required);
+                    longField.setDescription(description);
+                    longField.setReadOnly(readOnly);
+                    formLayout.addComponent(longField);
+                    break;
                 case TEXT:
                     ImmediateUpdateTextField textField = new ImmediateUpdateTextField(definition.getName()) {
                         private static final long serialVersionUID = 1L;
