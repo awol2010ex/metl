@@ -1,0 +1,10 @@
+/bin/
+/.settings/
+/build/
+/.classpath
+/.project
+/.DS_Store
+*.db
+security
+logs
+default user

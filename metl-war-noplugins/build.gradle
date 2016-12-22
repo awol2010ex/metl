@@ -1,0 +1,87 @@
+apply from: '../metl-assemble/common.gradle'
+apply plugin: 'java'
+apply plugin: 'war'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+buildscript {
+    repositories {
+        // uncomment this if you want to use your local maven repository to test undelivered
+        /// changes (like symmetricds changes)
+        //mavenLocal()
+
+        maven {url "http://maven.aliyun.com/nexus/content/groups/public"}
+        maven {url "http://repo.spring.io/libs-milestone"}
+        mavenCentral()
+        maven { url "http://maven.vaadin.com/vaadin-addons" }
+        maven { url "http://maven.jumpmind.com/repo" }
+        maven { url "http://repo.reficio.org/maven" }
+        maven { url "https://repository.jboss.org/nexus/content/repositories/deprecated" }
+        maven { url "http://www.soapui.org/repository/maven2" }
+        maven { url "https://github.com/santhosh-tekuri/maven-repository/raw/master" }
+        jcenter()
+    }
+    dependencies {
+        classpath 'org.akhikhl.gretty:gretty:1.4.0'
+    }
+}
+apply plugin: 'org.akhikhl.gretty'
+dependencies {
+    compile (project(":metl-ui")) {
+       exclude group:'org.eclipse.jetty'
+       exclude group:'javax.websocket'
+       exclude group:'javax.servlet.jsp'
+       exclude group:'javax.servlet'
+    }
+    compile project(":metl-core")
+    compile project(":resource-core")
+    compile project(":comp-rdbms-reader")
+    compile project(":comp-data-diff")
+    compile project(":comp-sorter")
+    compile project(":comp-temp-rdbms")
+    compile project(":comp-serialize")
+    compile project(":comp-sql-execute")
+    compile project(":comp-rdbms-writer")
+    compile project(":comp-sequence")
+    compile project(":comp-service")
+    compile project(":comp-zip")
+    compile project(":comp-file")
+    compile project(":comp-excel")
+    compile project(":comp-control") 
+    compile project(":comp-groovy")  
+    compile project(":comp-route")  
+    compile project(":comp-map")
+    compile project(":comp-transform")
+    compile project(":comp-xml") 
+    compile project(":comp-format")
+    compile project(":comp-email")
+    compile project(":comp-execute")
+    compile project(":comp-webrequest") 
+    compile project(":comp-test") 
+    compile project(":comp-text")
+    compile project(":metl-war")
+    compile "javax.servlet:javax.servlet-api:$servletVersion"
+    compile "org.eclipse.jetty:jetty-servlet:$jettyVersion"
+    compile "javax.servlet.jsp:jsp-api:$jspVersion"
+    compile "javax.websocket:javax.websocket-api:$webSocketVersion"
+    /*
+    compile "org.eclipse.jetty:jetty-webapp:$jettyVersion"
+    compile "org.eclipse.jetty:jetty-jmx:$jettyVersion"
+    compile "org.eclipse.jetty:jetty-annotations:$jettyVersion"
+    compile "org.eclipse.jetty.websocket:javax-websocket-server-impl:$jettyVersion"
+
+*/
+    compile project(":metl-patch-db2-97")
+    compile project(":comp-unoffice-kafka")
+}
+
+gretty {
+    port = 42000
+    contextPath = '/metl'
+    servletContainer = 'jetty9'
+    
+}
+
+gretty {
+ extraResourceBase '../metl-war/src/main/webapp'
+}
