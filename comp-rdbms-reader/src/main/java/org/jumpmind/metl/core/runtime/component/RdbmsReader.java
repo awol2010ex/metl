@@ -64,7 +64,7 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
 
     public final static String MATCH_ON_COLUMN_NAME_ONLY = "match.on.column.name";
     
-    public final static String PASS_INPUT_ROWS_THROUGH = "pass.input.rows.through";
+    public final static String PASS_INPUT_ROWS_THROUGH = "pass.input.rows.through";        
     
     public final static String RUN_WHEN = "run.when";
     
@@ -93,7 +93,7 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
     int rowReadDuringHandle;
     
     String unitOfWork = COMPONENT_LIFETIME;
-
+    
     @Override
     public void start() {
         TypedProperties properties = getTypedProperties();
@@ -104,6 +104,7 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
         passInputRowsThrough = properties.is(PASS_INPUT_ROWS_THROUGH, false);
         runWhen = properties.get(RUN_WHEN, runWhen);
         unitOfWork = properties.get(UNIT_OF_WORK, unitOfWork);
+        queryTimeout = properties.getInt(QUERY_TIMEOUT, queryTimeout);
     }
 
     @Override
@@ -490,9 +491,6 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
                 getComponentStatistics().incrementNumberEntitiesProcessed(threadNumber);
 
                 EntityData rowData = new EntityData();
-
-
-
                 rowData.setChangeType(entityChangeType);
                 for (int i = 1,s=meta.getColumnCount(); i <=s ; i++) {
                     String attributeId = attributeIds.get(i - 1);
