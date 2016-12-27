@@ -136,17 +136,17 @@
         <defaultValue>localhost:9092</defaultValue>
       </setting>
 
-      <setting id='key.deserializer'
+      <setting id='key.serializer'
                required='true'
                type='text'>
-        <name>key deserializer</name>
+        <name>key serializer</name>
         <defaultValue>org.apache.kafka.common.serialization.StringSerializer</defaultValue>
       </setting>
 
-      <setting id='value.deserializer'
+      <setting id='value.serializer'
                required='true'
                type='text'>
-        <name>value deserializer</name>
+        <name>value serializer</name>
         <defaultValue>org.apache.kafka.common.serialization.StringSerializer</defaultValue>
       </setting>
 
@@ -234,4 +234,142 @@
       </setting>
     </settings>
    </component>
+
+
+
+  <resource id='UnOfficeKafkaResource' resourceCategory='streamable'>
+       <name>UnOfficeKafkaResource</name>
+       <className>com.unoffice.comp.kafka.resource.UnOfficeKafkaResource</className>
+
+    <settings>
+
+      <setting id='bootstrap.servers'
+               required='true'
+               type='text'>
+        <name>bootstrap servers</name>
+        <defaultValue>localhost:9092</defaultValue>
+      </setting>
+      <setting id='topic'
+               required='true'
+               type='text'>
+        <name>topic</name>
+        <defaultValue>topic1</defaultValue>
+      </setting>
+
+      <setting id='group.id'
+               required='true'
+               type='text'>
+        <name>group id</name>
+        <defaultValue>test</defaultValue>
+      </setting>
+
+
+
+      <setting id='enable.auto.commit'
+               required='true'
+               type='boolean'>
+        <name>enable auto commit</name>
+        <defaultValue>true</defaultValue>
+      </setting>
+
+      <setting id='auto.commit.interval.ms'
+               required='true'
+               type='integer'>
+        <name>auto commit interval(ms)</name>
+        <defaultValue>1000</defaultValue>
+      </setting>
+
+
+      <setting id='session.timeout.ms'
+               required='true'
+               type='integer'>
+        <name>session timeout(ms)</name>
+        <defaultValue>30000</defaultValue>
+      </setting>
+
+      <setting id='key.deserializer'
+               required='true'
+               type='text'>
+        <name>key deserializer</name>
+        <defaultValue>org.apache.kafka.common.serialization.StringDeserializer</defaultValue>
+      </setting>
+
+      <setting id='value.deserializer'
+               required='true'
+               type='text'>
+        <name>value deserializer</name>
+        <defaultValue>org.apache.kafka.common.serialization.StringDeserializer</defaultValue>
+      </setting>
+
+      <setting id='key.serializer'
+               required='true'
+               type='text'>
+        <name>key serializer</name>
+        <defaultValue>org.apache.kafka.common.serialization.StringSerializer</defaultValue>
+      </setting>
+
+      <setting id='value.serializer'
+               required='true'
+               type='text'>
+        <name>value serializer</name>
+        <defaultValue>org.apache.kafka.common.serialization.StringSerializer</defaultValue>
+      </setting>
+
+
+      <setting id='acks'
+               required='false'
+               type='text'>
+        <name>acks</name>
+        <defaultValue>all</defaultValue>
+      </setting>
+
+      <setting id='retries'
+               required='false'
+               type='integer'>
+        <name>retries(times)</name>
+        <defaultValue>0</defaultValue>
+      </setting>
+
+      <setting id='batch.size'
+               required='false'
+               type='long'>
+        <name>batch size(byte)</name>
+        <defaultValue>16384</defaultValue>
+      </setting>
+
+      <setting id='linger.ms'
+               required='false'
+               type='integer'>
+        <name>linger(ms)</name>
+        <defaultValue>1</defaultValue>
+      </setting>
+
+      <setting id='buffer.memory'
+               required='false'
+               type='long'>
+        <name>buffer memory</name>
+        <defaultValue>33554432</defaultValue>
+      </setting>
+
+      <setting id='setting.message.type'
+               required='true'
+               type='choice'>
+        <name>setting message type</name>
+        <choices>
+          <choice>Text</choice>
+          <choice>Byte</choice>
+          <choice>Object</choice>
+          <choice>Map</choice>
+        </choices>
+      </setting>
+
+      <setting id='setting.message.type.map.value'
+               required='false'
+               type='text'>
+        <name>setting message type map value</name>
+      </setting>
+
+
+    </settings>
+  </resource>
 </definitions>

@@ -39,6 +39,7 @@ public class ProjectVersionMenuManager extends AbstractDesignSelectedValueMenuMa
                 "Edit|Rename",
                 "Edit|Copy",
                 "Edit|Remove",
+                "File|New|Resource|Directory|UnOffice Kafka Resource"
         });
     }
 }

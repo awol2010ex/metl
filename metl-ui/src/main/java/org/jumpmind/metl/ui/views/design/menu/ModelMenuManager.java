@@ -46,6 +46,7 @@ public class ModelMenuManager extends AbstractDesignSelectedValueMenuManager {
                 "Edit|Rename",
                 "Edit|Copy",
                 "Edit|Remove",
+                "File|New|Resource|Directory|UnOffice Kafka Resource"
         });
     }
 }

@@ -25,9 +25,9 @@ public class UnOfficeKafkaProducer extends AbstractComponentRuntime {
 
 
 
-    public static final String KEY_DESERIALIZER = "key.deserializer";
+    public static final String KEY_SERIALIZER = "key.serializer";
 
-    public static final String VALUE_DESERIALIZER = "value.deserializer";
+    public static final String VALUE_SERIALIZER = "value.serializer";
 
     //producer params --start
     public static final String BOOTSTRAP_SERVERS = "bootstrap.servers";
@@ -50,8 +50,8 @@ public class UnOfficeKafkaProducer extends AbstractComponentRuntime {
 
 
 
-    String keyDeserializer;
-    String valueDeserializer;
+    String keySerializer;
+    String valueSerializer;
 
     //producer params --start
     String bootstrapServers;
@@ -87,11 +87,11 @@ public class UnOfficeKafkaProducer extends AbstractComponentRuntime {
         bootstrapServers = getComponent().get(BOOTSTRAP_SERVERS, "localhost:9092");
         bootstrapServers = resolveParamsAndHeaders(bootstrapServers, inputMessage);
 
-        keyDeserializer = getComponent().get(KEY_DESERIALIZER, "org.apache.kafka.common.serialization.StringSerializer");
-        keyDeserializer = resolveParamsAndHeaders(keyDeserializer, inputMessage);
+        keySerializer = getComponent().get(KEY_SERIALIZER, "org.apache.kafka.common.serialization.StringSerializer");
+        keySerializer = resolveParamsAndHeaders(keySerializer, inputMessage);
 
-        valueDeserializer = getComponent().get(VALUE_DESERIALIZER, "org.apache.kafka.common.serialization.StringSerializer");
-        valueDeserializer = resolveParamsAndHeaders(valueDeserializer, inputMessage);
+        valueSerializer = getComponent().get(VALUE_SERIALIZER, "org.apache.kafka.common.serialization.StringSerializer");
+        valueSerializer = resolveParamsAndHeaders(valueSerializer, inputMessage);
 
 
         acks =getComponent().get(ACKS ,"all");
@@ -124,8 +124,8 @@ public class UnOfficeKafkaProducer extends AbstractComponentRuntime {
                     props.put("batch.size", batchSize.intValue());
                     props.put("linger.ms", lingerMs);
                     props.put("buffer.memory",bufferMemory);
-                    props.put("key.serializer", keyDeserializer);
-                    props.put("value.serializer", valueDeserializer);
+                    props.put("key.serializer", keySerializer);
+                    props.put("value.serializer", valueSerializer);
 
                     final Producer<String, String> producer = new KafkaProducer<>(props);
                     try {

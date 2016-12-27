@@ -34,7 +34,8 @@ public class FolderMenuManager extends AbstractDesignSelectedValueMenuManager {
                 "File|New|Resource|HTTP",
                 "File|New|Resource|Mail Session",
                 "File|Import...",        
-                "File|Export...",                
+                "File|Export...",
+                "File|New|Resource|Directory|UnOffice Kafka Resource"
         });
     }
 }

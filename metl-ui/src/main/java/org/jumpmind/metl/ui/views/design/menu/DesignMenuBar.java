@@ -52,6 +52,7 @@ public class DesignMenuBar extends AbstractMenuBar {
         addSeparator("Edit");
         add("Edit|Remove");
 
+        add("File|New|Resource|Directory|UnOffice Kafka Resource");
     }
 
     static class NothingSelectAction extends AbstractDesignSelectedValueMenuManager {

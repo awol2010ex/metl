@@ -45,6 +45,7 @@ public class ResourceMenuManager extends AbstractDesignSelectedValueMenuManager 
                 "File|Export...",                
                 "Edit|Rename",
                 "Edit|Remove",
+                "File|New|Resource|Directory|UnOffice Kafka Resource"
         });
     }
 }

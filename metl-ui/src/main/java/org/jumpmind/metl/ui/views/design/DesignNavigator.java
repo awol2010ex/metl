@@ -777,6 +777,10 @@ public class DesignNavigator extends VerticalLayout {
         addNewResource("JMS", "JMS Directory", Icons.QUEUE);
     }
 
+    public void addNewUnOfficeKafkaResource() {
+        addNewResource("UnOfficeKafkaResource", "UnOffice Kafka Resource", Icons.QUEUE);
+    }
+
     public void addNewSMBFileSystem() {
         addNewResource("SMB", "SMB Directory", Icons.FILE_SYSTEM);
     }

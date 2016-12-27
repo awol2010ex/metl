@@ -45,7 +45,8 @@ public class FlowMenuManager extends AbstractDesignSelectedValueMenuManager {
                 "File|Export...",
                 "Edit|Rename",
                 "Edit|Copy",
-                "Edit|Remove"
+                "Edit|Remove",
+                "File|New|Resource|Directory|UnOffice Kafka Resource"
         });
     }
 }
