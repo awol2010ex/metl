@@ -77,7 +77,7 @@ public class UnOfficeKafkaProducer extends AbstractComponentRuntime {
         runWhen = getComponent().get(RUN_WHEN, PER_UNIT_OF_WORK);
 
         if (getInputModel() == null) {
-            throw new IllegalStateException("A databasePlatform writer must have an input model defined");
+            throw new IllegalStateException("A Producer writer must have an input model defined");
         }
     }
 
