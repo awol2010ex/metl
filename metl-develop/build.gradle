@@ -46,4 +46,5 @@ dependencies {
 
     testCompile project(":metl-patch-db2-97")
     testCompile project(":comp-unoffice-kafka")
+    testCompile project(":comp-unoffice-hprose")
 }

@@ -71,6 +71,7 @@ dependencies {
 	compile("org.apache.kafka:kafka-clients:0.10.1.0"){
 	     exclude group: 'org.slf4j'
 	}
+    compile 'org.hprose:hprose-java:2.0.30'
 
 }
 

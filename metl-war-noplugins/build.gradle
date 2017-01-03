@@ -73,6 +73,7 @@ dependencies {
 */
     compile project(":metl-patch-db2-97")
     compile project(":comp-unoffice-kafka")
+    compile project(":comp-unoffice-hprose")
 }
 
 gretty {

@@ -6,4 +6,4 @@ includeFlat 'metl-server', 'metl-core',  'metl-ui', 'resource-core',
 'comp-control', 'comp-groovy', 'comp-route', 'comp-map',
 'comp-transform', 'comp-xml', 'comp-format', 'comp-email',
 'comp-execute', 'comp-test', 'comp-text', 'comp-webrequest', 
-'metl-war', 'metl-develop', 'resource-core'
+'metl-war', 'metl-develop', 'comp-unoffice-kafka','comp-unoffice-hprose'
