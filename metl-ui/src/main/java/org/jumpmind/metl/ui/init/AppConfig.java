@@ -44,6 +44,8 @@ import java.util.Set;
 
 import javax.sql.DataSource;
 
+import org.apache.activemq.Service;
+import org.apache.activemq.broker.BrokerService;
 import org.h2.Driver;
 import org.jumpmind.db.platform.IDatabasePlatform;
 import org.jumpmind.db.platform.JdbcDatabasePlatformFactory;
@@ -137,6 +139,8 @@ public class AppConfig extends WebMvcConfigurerAdapter {
     DataSource configDataSource;
     
     DataSource executionDataSource;
+    
+    Service brokerService;
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
@@ -460,6 +464,22 @@ public class AppConfig extends WebMvcConfigurerAdapter {
             }
         }
         return securityService;
+    }
+    
+    @Bean
+    @Scope(value = "singleton", proxyMode = ScopedProxyMode.INTERFACES)
+    Service brokerService() {
+        if (brokerService == null) {
+            try {
+                BrokerService broker = new BrokerService();
+                broker.setPersistent(false);
+                broker.start();
+                brokerService = broker;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return brokerService;
     }
 
     @Bean

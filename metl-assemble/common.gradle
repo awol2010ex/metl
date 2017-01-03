@@ -57,9 +57,11 @@ import java.util.Date
         //mavenLocal()
 
 maven {url "http://maven.aliyun.com/nexus/content/groups/public"}
+
 		maven {url "http://repo.spring.io/libs-milestone"}
 		mavenCentral()
         maven { url "http://maven.vaadin.com/vaadin-addons" }
+
         maven { url "http://maven.jumpmind.com/repo" }
         maven { url "http://repo.reficio.org/maven" }
         maven { url "https://repository.jboss.org/nexus/content/repositories/deprecated" }

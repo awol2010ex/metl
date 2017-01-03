@@ -22,8 +22,6 @@ package org.jumpmind.metl.core.runtime.resource;
 
 import javax.naming.Context;
 
-import org.jumpmind.properties.TypedProperties;
-
 public class JMS extends AbstractResourceRuntime {
 
     public static final String TYPE = "JMS";
@@ -41,6 +39,10 @@ public class JMS extends AbstractResourceRuntime {
     public static final String MSG_TYPE_OBJECT = "Object";
 
     public static final String MSG_TYPE_MAP = "Map";
+    
+    public static final String ACK_TYPE_ON_FLOW_COMPLETE = "On Flow Complete";
+    
+    public static final String ACK_TYPE_IMMEDIATE = "Immediate";
 
     public static final String SETTING_CREATE_MODE = "create.mode";
 
@@ -68,42 +70,29 @@ public class JMS extends AbstractResourceRuntime {
 
     public static final String SETTING_MESSAGE_TYPE_MAP_VALUE = "map.msg.key";
     
-    public static final String SETTING_MESSAGE_JMS_TYPE = "msg.jms.type";    
+    public static final String SETTING_MESSAGE_JMS_TYPE = "msg.jms.type";
+    
+    public static final String SETTING_ACK_TYPE = "ack.type";
 
-    IDirectory streamableResource;
-
-    TypedProperties properties;
-
+    @SuppressWarnings("unchecked")
     @Override
-    protected void start(TypedProperties properties) {
-        this.properties = properties;
+    public <T> T reference() {
+        AbstractJMSJndiDirectory streamableResource = null;
         try {
-            String createMode = properties.get(SETTING_CREATE_MODE);
+            String createMode = resourceRuntimeSettings.get(SETTING_CREATE_MODE);
             if (CREATE_MODE_JNDI.equals(createMode)) {
-                String type = properties.get(SETTING_TYPE);
+                String type = resourceRuntimeSettings.get(SETTING_TYPE);
                 if (TYPE_TOPIC.equals(type)) {
-                    streamableResource = new JMSJndiTopicDirectory(properties);
+                    streamableResource = new JMSJndiTopicDirectory(resourceRuntimeSettings);
                 } else if (TYPE_QUEUE.equals(type)) {
-                    streamableResource = new JMSJndiQueueDirectory(properties);
+                    streamableResource = new JMSJndiQueueDirectory(resourceRuntimeSettings);
                 }
             }
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public void stop() {
-        if (streamableResource != null) {
-            streamableResource.close();
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> T reference() {
+            throw new RuntimeException("Failed to start JMS resource", e);
+        }        
         return (T) streamableResource;
     }
 }
