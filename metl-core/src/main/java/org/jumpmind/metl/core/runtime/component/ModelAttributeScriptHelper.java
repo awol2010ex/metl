@@ -39,10 +39,12 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
+import org.jumpmind.metl.core.model.Model;
 import org.jumpmind.metl.core.model.ModelAttribute;
 import org.jumpmind.metl.core.model.ModelEntity;
 import org.jumpmind.metl.core.runtime.EntityData;
 import org.jumpmind.metl.core.runtime.EntityData.ChangeType;
+import org.jumpmind.metl.core.runtime.EntityDataMessage;
 import org.jumpmind.metl.core.runtime.Message;
 import org.jumpmind.util.FormatUtils;
 import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
@@ -58,6 +60,8 @@ public class ModelAttributeScriptHelper {
 
     protected ModelEntity entity;
 
+    protected Model model;
+
     protected ComponentContext context;
 
     protected Message message;
@@ -66,28 +70,29 @@ public class ModelAttributeScriptHelper {
 
     static private ThreadLocal<ScriptEngine> scriptEngine = new ThreadLocal<ScriptEngine>();
 
-    public ModelAttributeScriptHelper(Message message, ComponentContext context, ModelAttribute attribute, ModelEntity entity,
+    public ModelAttributeScriptHelper(Message message, ComponentContext context, ModelAttribute attribute, ModelEntity entity, Model model,
             EntityData data, Object value) {
-        this(context, attribute, entity);
+        this(context, attribute, entity, model);
         this.value = value;
         this.data = data;
         this.message = message;
     }
-    
-    public ModelAttributeScriptHelper(ComponentContext context, ModelAttribute attribute, ModelEntity entity) {
+
+    public ModelAttributeScriptHelper(ComponentContext context, ModelAttribute attribute, ModelEntity entity, Model model) {
         this.context = context;
         this.attribute = attribute;
         this.entity = entity;
+        this.model = model;
     }
-    
+
     public void setMessage(Message message) {
         this.message = message;
     }
-    
+
     public void setData(EntityData data) {
         this.data = data;
     }
-    
+
     public void setValue(Object value) {
         this.value = value;
     }
@@ -95,7 +100,7 @@ public class ModelAttributeScriptHelper {
     public Object nullvalue() {
         return null;
     }
-    
+
     public void mapChangeType(Object add, Object chg, Object del) {
         if (value != null && value.equals(add)) {
             data.setChangeType(ChangeType.ADD);
@@ -112,37 +117,79 @@ public class ModelAttributeScriptHelper {
         text = isNotBlank(text) ? text : "0";
         return Integer.parseInt(text);
     }
-    
+
     public Integer parseInt() {
         String text = value != null ? value.toString() : "0";
         text = isNotBlank(text) ? text : "0";
         return Integer.parseInt(text);
     }
 
-    
     public Long parseLong() {
         String text = value != null ? value.toString() : "0";
         text = isNotBlank(text) ? text : "0";
         return Long.parseLong(text);
     }
-    
+
     public Double parseDouble() {
         String text = value != null ? value.toString() : "0";
         text = isNotBlank(text) ? text : "0";
         return Double.parseDouble(text);
     }
-    
+
     public BigDecimal parseBigDecimal() {
+        return parseBigDecimal(value);
+    }
+    
+    public BigDecimal parseBigDecimal(Object value) {
         String text = value != null ? value.toString() : "0";
         text = isNotBlank(text) ? text : "0";
         return new BigDecimal(text);
     }
     
+    public Number biggest(Number... numbers) {
+        Number biggest = null;
+        for (int i = 0; i < numbers.length; i++) {
+            if (biggest == null || biggest.doubleValue() < numbers[i].doubleValue()) {
+                biggest = numbers[i];
+            }
+        }
+        return biggest;
+    }
+    
+    public Serializable subtract(String startingValueAttributeName, String... attributeNames) {
+        BigDecimal value = parseBigDecimal(data.get(entity.getModelAttributeByName(startingValueAttributeName).getId()));
+        for(int i = 0; i < attributeNames.length; i++) {
+            value = value.subtract(parseBigDecimal(data.get(entity.getModelAttributeByName(attributeNames[i]).getId())));    
+        }
+        return value;
+    }
+    
+    public Serializable subtract(String startingValueAttributeName, Number... numbers) {
+        BigDecimal value = parseBigDecimal(data.get(entity.getModelAttributeByName(startingValueAttributeName).getId()));
+        for(int i = 0; i < numbers.length; i++) {
+            value = value.subtract(new BigDecimal(numbers[i].toString()));    
+        }
+        return value;
+    }    
+    
+    public Serializable add(String... attributeNames) {
+        BigDecimal value = BigDecimal.ZERO;
+        for(int i = 0; i < attributeNames.length; i++) {
+            value = value.add(parseBigDecimal(data.get(entity.getModelAttributeByName(attributeNames[i]).getId())));    
+        }
+        return value;
+    }    
+
     public Serializable map(Map<Object, Serializable> lookup, Serializable defaultValue) {
         if (value != null) {
-            return lookup.get(value);
+            value = lookup.get(value);
         }
-        return (Serializable)value;
+        
+        if (value == null) {
+            value = defaultValue;
+        }
+        
+        return (Serializable) value;
     }
 
     public Serializable flowParameter(String parameterName) {
@@ -211,7 +258,7 @@ public class ModelAttributeScriptHelper {
     public Date daysFromNow(int days) {
         return DateUtils.addDays(new Date(), days);
     }
-    
+
     public Date currentdate() {
         return new Date();
     }
@@ -295,8 +342,40 @@ public class ModelAttributeScriptHelper {
         return value;
     }
 
+    public Long nextLongValueInMessage(String... attributeNamesToLookAt) {
+        Long max = (Long) message.getHeader().get("_nextLongValueInMessage");
+        if (max == null) {
+            max = 0l;
+        }
+        EntityDataMessage dataMessage = (EntityDataMessage) message;
+        List<EntityData> datas = dataMessage.getPayload();
+        for (EntityData entityData : datas) {
+            for (String attributeName : attributeNamesToLookAt) {
+                List<ModelAttribute> attributes = model.getAttributesByName(attributeName);
+                for (ModelAttribute attribute : attributes) {
+                    long currentValue = 0;
+                    Object obj = entityData.get(attribute.getId());
+                    if (obj instanceof Number) {
+                        currentValue = ((Number) obj).longValue();
+                    } else if (obj != null) {
+                        try {
+                            currentValue = new Long(obj.toString());
+                        } catch (NumberFormatException e) {
+                        }
+                    }
+                    
+                    if (currentValue > max) {
+                        max = currentValue;
+                    }
+                }
+            }
+        }
+        max++;
+        message.getHeader().put("_nextLongValueInMessage", max);
+        return max;
+    }
+
     public Long sequence(long seed_value, int incrementValue, String breakAttributeName) {
-        
         ModelAttribute breakAttribute = entity.getModelAttributeByName(breakAttributeName);
         if (breakAttribute == null) {
             throw new RuntimeException("Break attribute not found.  Specify the name of the attribute (no entity qualifier)");
@@ -307,7 +386,7 @@ public class ModelAttributeScriptHelper {
             sequenceValue = new Long(seed_value);
         } else {
             if (context.getContext().get(attribute.getId() + "-" + breakAttribute.getId()).equals(breakAttributeValue)) {
-                sequenceValue = new Long(sequenceValue.longValue() + incrementValue);      
+                sequenceValue = new Long(sequenceValue.longValue() + incrementValue);
             } else {
                 sequenceValue = new Long(seed_value);
             }
@@ -316,11 +395,11 @@ public class ModelAttributeScriptHelper {
         context.getContext().put(attribute.getId() + "-" + breakAttribute.getId(), breakAttributeValue);
         return sequenceValue;
     }
-    
-    public Object getAttributeValueByName(String attributeName) {        
+
+    public Object getAttributeValueByName(String attributeName) {
         return data.get(entity.getModelAttributeByName(attributeName).getId());
     }
-    
+
     public static String[] getSignatures() {
         List<String> signatures = new ArrayList<String>();
         Method[] methods = ModelAttributeScriptHelper.class.getMethods();
@@ -348,7 +427,7 @@ public class ModelAttributeScriptHelper {
         return signatures.toArray(new String[signatures.size()]);
     }
 
-    public static Object eval(Message message, ComponentContext context, ModelAttribute attribute, Object value, ModelEntity entity,
+    public static Object eval(Message message, ComponentContext context, ModelAttribute attribute, Object value, Model model, ModelEntity entity,
             EntityData data, String expression) {
         ScriptEngine engine = scriptEngine.get();
         if (engine == null) {
@@ -358,14 +437,15 @@ public class ModelAttributeScriptHelper {
         engine.put("value", value);
         engine.put("data", data);
         engine.put("entity", entity);
+        engine.put("model", model);
         engine.put("attribute", attribute);
         engine.put("message", message);
-        engine.put("context", context);        
+        engine.put("context", context);
 
         try {
             String importString = "import org.jumpmind.metl.core.runtime.component.ModelAttributeScriptHelper;\n";
             String code = String.format(
-                    "return new ModelAttributeScriptHelper(message, context, attribute, entity, data, value) { public Object eval() { return %s } }.eval()",
+                    "return new ModelAttributeScriptHelper(message, context, attribute, entity, model, data, value) { public Object eval() { return %s } }.eval()",
                     expression);
             return engine.eval(importString + code);
         } catch (ScriptException e) {
