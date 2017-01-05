@@ -37,7 +37,6 @@ public class UnOfficeHproseClient extends AbstractComponentRuntime {
     public static final String METHOD = "hprose.method";
     public static final String KEEPALIVE = "hprose.keepalive";
     public static final String KEEPALIVETIMEOUT = "hprose.keepalivetimeout";
-    public static final String ISASYNC = "hprose.isasync";
     public static final String TCP_FULLDUPLEX = "hprose.tcp.fullduplex";
     public static final String TCP_ISNODELAY = "hprose.tcp.isnodelay";
     public static final String TCP_MAXPOOLSIZE = "hprose.tcp.maxpoolsize";
@@ -51,7 +50,6 @@ public class UnOfficeHproseClient extends AbstractComponentRuntime {
     public String method;
     public Boolean keepAlive;
     public Integer keepAliveTimeout;
-    public Boolean isAsync;
     public Boolean tcpFullDuplex;
     public Boolean tcpIsNoDelay;
     public Integer tcpMaxPoolSize;
@@ -102,7 +100,6 @@ public class UnOfficeHproseClient extends AbstractComponentRuntime {
         method = getComponent().get(METHOD);
         keepAlive = getComponent().getBoolean(KEEPALIVE, true);
         keepAliveTimeout = getComponent().getInt(KEEPALIVETIMEOUT, 300);
-        isAsync = getComponent().getBoolean(ISASYNC, false);
 
         tcpFullDuplex = getComponent().getBoolean(TCP_FULLDUPLEX, false);
         tcpIsNoDelay = getComponent().getBoolean(TCP_ISNODELAY, false);
@@ -202,53 +199,19 @@ public class UnOfficeHproseClient extends AbstractComponentRuntime {
                         }
 
                         if(client!=null){
-                            if (isAsync) {
-                                try {
 
-
-                                    promiseList.add(client.invoke(method, params.toArray(), Promise.class).then(new Action<Object>() {
-                                        @Override
-                                        public void call(Object value) throws Throwable {
-                                            payload.add(formatReturnValue(value));
-                                        }
-                                    }, new Action<Throwable>() {
-                                        @Override
-                                        public void call(Throwable ex) throws Throwable {
-                                            UnOfficeHproseClient.this.error("",ex);
-                                        }
-                                    }));
-                                } catch (Throwable e) {
-                                    throw new RuntimeException(e);
-                                } finally{
-
-                                }
-                            }else{
                                 try {
                                     payload.add(formatReturnValue(client.invoke(method ,params.toArray())));
                                 } catch (Throwable ex) {
                                     throw new RuntimeException(ex);
                                 }
-                            }
+
                         }
 
                     }
                 }
 
 
-                //all async call completed
-                if (isAsync){
-                    Promise.all(promiseList.toArray() ).then(o->{
-
-                        ////send the values of client recevies to the data flow
-                        sendPayload(callback ,payload);
-
-                        //send controll message
-                        if (PER_MESSAGE.equals(runWhen) && controlMessageOnTextSend) {
-                            callback.sendControlMessage();
-                        }
-                    });
-                }
-                else{
 
                     sendPayload(callback ,payload);
 
@@ -256,7 +219,7 @@ public class UnOfficeHproseClient extends AbstractComponentRuntime {
                     if (PER_MESSAGE.equals(runWhen) && controlMessageOnTextSend) {
                         callback.sendControlMessage();
                     }
-                }
+
 
                 if(client!=null){
                     client.close();

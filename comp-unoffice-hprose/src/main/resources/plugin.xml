@@ -87,12 +87,7 @@
     </setting>
 
 
-    <setting id='hprose.isasync'
-             required='false'
-             type='boolean'>
-      <name>call async</name>
-      <defaultValue>false</defaultValue>
-    </setting>
+
 
     <setting id='hprose.tcp.fullduplex'
              required='false'
