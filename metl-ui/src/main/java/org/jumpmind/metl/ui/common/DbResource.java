@@ -33,36 +33,41 @@ import org.jumpmind.db.platform.JdbcDatabasePlatformFactory;
 import org.jumpmind.db.sql.SqlTemplateSettings;
 import org.jumpmind.metl.core.model.Agent;
 import org.jumpmind.metl.core.runtime.resource.IResourceRuntime;
+import org.jumpmind.db.util.BasicDataSourceFactory;
 import org.jumpmind.properties.TypedProperties;
 import org.jumpmind.vaadin.ui.sqlexplorer.IDb;
 
 public class DbResource implements IDb, Serializable {
 
         private static final long serialVersionUID = 1L;
-
         IResourceRuntime resource;
 
         Agent agent;
+        TypedProperties properties;
+
+        String name;
 
         IDatabasePlatform platform;
-
         ApplicationContext context;
-
-        public DbResource(Agent agent, IResourceRuntime resource,ApplicationContext context) {
-            this.resource = resource;
-            this.agent = agent;
+        public DbResource(String name, TypedProperties properties,ApplicationContext context) {
+            this.name = name;
+            this.properties = properties;
             this.context=context;
         }
 
         @Override
         public String getName() {
-            return agent.getName() + " > " + resource.getResource().getName();
+            return name;
         }
 
         @Override
         public IDatabasePlatform getPlatform() {
             if (platform == null) {                
-                DataSource dataSource = resource.reference();
+                BasicDataSource dataSource = BasicDataSourceFactory.create(properties);
+                dataSource.setMaxActive(2);
+                dataSource.setMaxIdle(1);
+                dataSource.setMinIdle(0);
+                dataSource.setInitialSize(0);
 
 
                  /*使用自定义factory --start--*/
@@ -73,20 +78,18 @@ public class DbResource implements IDb, Serializable {
                         Method m =fc.getMethod("createNewPlatformInstance",new Class[]{DataSource.class,SqlTemplateSettings.class,boolean.class,boolean.class});
                         platform = (IDatabasePlatform)m.invoke(null,dataSource,new SqlTemplateSettings(), false, false);
                     } catch (ClassNotFoundException e) {
-                      //  log.error("",e);
+                        //  log.error("",e);
                     } catch (NoSuchMethodException e) {
-                       // log.error("",e);
+                        // log.error("",e);
                     } catch (InvocationTargetException e) {
-                      //  log.error("",e);
+                        //  log.error("",e);
                     } catch (IllegalAccessException e) {
-                       // log.error("",e);
+                        // log.error("",e);
                     }
                 }
 
                 if(platform==null)
              /*--end--*/
-
-
                 platform = JdbcDatabasePlatformFactory.createNewPlatformInstance(dataSource,
                         new SqlTemplateSettings(), false, false);
             }
@@ -104,27 +107,28 @@ public class DbResource implements IDb, Serializable {
                 }
             }
         }
-        
-        public Agent getAgent() {
-            return agent;
-        }
 
-        public IResourceRuntime getResource() {
-            return resource;
-        }
 
-        @Override
-        public int hashCode() {
-            return resource.hashCode();
-        }
+    public Agent getAgent() {
+        return agent;
+    }
 
-        @Override
-        public boolean equals(Object obj) {
-            if (obj instanceof DbResource) {
-                return resource.equals(((DbResource) obj).getResource());
-            } else {
-                return super.equals(obj);
-            }
+    public IResourceRuntime getResource() {
+        return resource;
+    }
+
+    @Override
+    public int hashCode() {
+        return resource.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof DbResource) {
+            return resource.equals(((DbResource) obj).getResource());
+        } else {
+            return super.equals(obj);
         }
+    }
 
     }
