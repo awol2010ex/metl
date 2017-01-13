@@ -21,8 +21,8 @@
 package org.jumpmind.metl.core.runtime;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
+import java.sql.DriverManager;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,7 +40,6 @@ import org.jumpmind.db.sql.SqlTemplateSettings;
 import org.jumpmind.db.util.BasicDataSourceFactory;
 import org.jumpmind.db.util.BasicDataSourcePropertyConstants;
 import org.jumpmind.db.util.ConfigDatabaseUpgrader;
-import org.jumpmind.exception.IoException;
 import org.jumpmind.metl.core.model.Agent;
 import org.jumpmind.metl.core.model.AgentDeployment;
 import org.jumpmind.metl.core.model.Execution;
@@ -62,9 +61,9 @@ import org.jumpmind.metl.core.runtime.flow.FlowRuntime;
 import org.jumpmind.metl.core.runtime.web.HttpRequestMappingRegistry;
 import org.jumpmind.metl.core.security.SecurityService;
 import org.jumpmind.metl.core.util.LogUtils;
+import org.jumpmind.metl.core.util.MockJdbcDriver;
 import org.jumpmind.persist.IPersistenceManager;
 import org.jumpmind.properties.TypedProperties;
-import org.jumpmind.util.AppUtils;
 import org.springframework.core.env.StandardEnvironment;
 
 public class StandaloneFlowRunner {
@@ -168,7 +167,8 @@ public class StandaloneFlowRunner {
                 new ConfigDatabaseUpgrader("/schema-exec.xml", databasePlatform, true, "METL").upgrade();
                 persistenceManager = new SqlPersistenceManager(databasePlatform);
                 configurationService = new ConfigurationSqlService(new SecurityService(), databasePlatform, persistenceManager, "METL");
-
+                MockJdbcDriver mockDriver = new MockJdbcDriver(configurationService);
+                DriverManager.registerDriver(mockDriver);
                 PluginManager pluginManager = new PluginManager("working/plugins", configurationService);
                 pluginManager.init();
 
@@ -178,7 +178,7 @@ public class StandaloneFlowRunner {
                         configurationService, new SecurityService());
 
                 executionService = new ExecutionSqlService(databasePlatform, persistenceManager, "METL", new StandardEnvironment());
-                agentRuntime = new AgentRuntime(new Agent("test", AppUtils.getHostName()), configurationService, executionService,
+                agentRuntime = new AgentRuntime(new Agent("test"), configurationService, executionService,
                         new ComponentRuntimeFactory(componentDefinitionFactory), componentDefinitionFactory,
                         new HttpRequestMappingRegistry());
                 agentRuntime.start();
@@ -199,8 +199,10 @@ public class StandaloneFlowRunner {
                 }
 
                 componentDefinitionFactory.refresh();
-            } catch (IOException e) {
-                throw new IoException(e);
+            } catch (RuntimeException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
         }
     }

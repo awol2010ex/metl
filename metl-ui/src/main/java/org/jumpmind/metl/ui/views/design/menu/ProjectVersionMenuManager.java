@@ -1,6 +1,7 @@
 package org.jumpmind.metl.ui.views.design.menu;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.jumpmind.metl.ui.common.CutCopyPasteManager;
 import org.jumpmind.metl.ui.views.design.DesignNavigator;
 
 public class ProjectVersionMenuManager extends AbstractDesignSelectedValueMenuManager {
@@ -20,8 +21,9 @@ public class ProjectVersionMenuManager extends AbstractDesignSelectedValueMenuMa
     
     @Override
     protected String[] getEnabledPaths(Object selected) {
-        return (String[])ArrayUtils.addAll(super.getEnabledPaths(selected), new String[] {
+        String[] enabledPaths = (String[]) ArrayUtils.addAll(super.getEnabledPaths(selected), new String[] {
                 "File|New|Project Dependency",
+                "File|New|Project Version",
                 "File|New|Flow|Design",
                 "File|New|Flow|Test",
                 "File|New|Model",
@@ -41,5 +43,10 @@ public class ProjectVersionMenuManager extends AbstractDesignSelectedValueMenuMa
                 "Edit|Remove",
                 "File|New|Resource|Directory|UnOffice Kafka Resource"
         });
+        if (navigator.getContext().getClipboard()
+                .containsKey(CutCopyPasteManager.CLIPBOARD_OBJECT_TYPE)) {
+            enabledPaths = (String[]) ArrayUtils.add(enabledPaths, "Edit|Paste");
+        }
+        return enabledPaths;
     }
 }

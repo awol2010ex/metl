@@ -36,9 +36,10 @@ import static org.jumpmind.db.util.BasicDataSourcePropertyConstants.DB_POOL_TEST
 import static org.jumpmind.db.util.BasicDataSourcePropertyConstants.DB_POOL_URL;
 import static org.jumpmind.db.util.BasicDataSourcePropertyConstants.DB_POOL_USER;
 import static org.jumpmind.db.util.BasicDataSourcePropertyConstants.DB_POOL_VALIDATION_QUERY;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -72,6 +73,7 @@ import org.jumpmind.metl.core.security.SecurityService;
 import org.jumpmind.metl.core.util.AppConstants;
 import org.jumpmind.metl.core.util.EnvConstants;
 import org.jumpmind.metl.core.util.LogUtils;
+import org.jumpmind.metl.core.util.MockJdbcDriver;
 import org.jumpmind.metl.ui.persist.AuditableConfigurationService;
 import org.jumpmind.metl.ui.views.DefinitionPlusUIFactory;
 import org.jumpmind.metl.ui.views.IDefinitionPlusUIFactory;
@@ -141,6 +143,8 @@ public class AppConfig extends WebMvcConfigurerAdapter {
     DataSource executionDataSource;
     
     Service brokerService;
+    
+    MockJdbcDriver mockDriver;
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
@@ -169,6 +173,20 @@ public class AppConfig extends WebMvcConfigurerAdapter {
         set.add("application/xml");
         set.add("application/json");
         return set;
+    }
+    
+    @Bean
+    @Scope(value = "singleton")
+    MockJdbcDriver mockDriver() {
+        if (mockDriver == null) {
+            mockDriver = new MockJdbcDriver(configurationService());
+            try {
+                DriverManager.registerDriver(mockDriver);
+            } catch (SQLException e) {
+                log.error("", e);
+            }
+        }
+        return mockDriver;
     }
 
     @Bean
@@ -250,29 +268,6 @@ public class AppConfig extends WebMvcConfigurerAdapter {
     @Scope(value = "singleton", proxyMode = ScopedProxyMode.INTERFACES)
     public IDatabasePlatform configDatabasePlatform() {
         if (configDatabasePlatform == null) {
-
-            /*使用自定义factory --start--*/
-
-            String   customFactory =env.getProperty("jdbc.custom.factory");
-            if(customFactory!=null && !"".equals(customFactory.trim())) {
-                try {
-                    Class fc =Class.forName(customFactory);
-                    Method m =fc.getMethod("createNewPlatformInstance",new Class[]{DataSource.class,SqlTemplateSettings.class,boolean.class,boolean.class});
-                    configDatabasePlatform = (IDatabasePlatform)m.invoke(null,configDataSource(),new SqlTemplateSettings(), true, false);
-                } catch (ClassNotFoundException e) {
-                    log.error("",e);
-                } catch (NoSuchMethodException e) {
-                    log.error("",e);
-                } catch (InvocationTargetException e) {
-                    log.error("",e);
-                } catch (IllegalAccessException e) {
-                    log.error("",e);
-                }
-            }
-
-            if(configDatabasePlatform==null)
-             /*--end--*/
-
             configDatabasePlatform = JdbcDatabasePlatformFactory.createNewPlatformInstance(
                     configDataSource(), new SqlTemplateSettings(), true, false);
         }

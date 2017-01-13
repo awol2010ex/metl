@@ -107,8 +107,6 @@ public interface IConfigurationService {
 
     public List<Agent> findAgents();
 
-    public List<Agent> findAgentsForHost(String hostName);
-
     public List<AgentName> findAgentsInFolder(Folder folder);
 
     public void refresh(PluginRepository pluginRepository);
@@ -184,6 +182,12 @@ public interface IConfigurationService {
     public ProjectVersion findProjectVersion(String projectVersionId);
 
     public Resource findResource(String id);    
+    
+    public List<Flow> findFlowsByName(String projectVersionId, String flowName);
+    
+    public List<Resource> findResourcesByName(String projectVersionId, String resourceName);
+
+    public List<Model> findModelsByName(String projectVersionId, String modelName);
 
     public List<Resource> findResourcesByTypes(String projectVersionId, String... types);
 
@@ -261,7 +265,15 @@ public interface IConfigurationService {
 
     public Flow copy(Flow original);
 
+    public Flow copy(Map<String, AbstractObject> oldToNewUUIDMapping, Flow original, boolean newProjectVersion);
+
     public Model copy(Model original);
+    
+    public Model copy(Map<String, AbstractObject> oldToNewUUIDMapping, Model original);
+    
+    public Resource copy(Resource original);
+    
+    public Resource copy(Map<String, AbstractObject> oldToNewUUIDMapping, Resource original);
 
     public void delete(Plugin plugin);
 
