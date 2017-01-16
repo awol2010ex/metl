@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -54,7 +53,7 @@ public class Transformer extends AbstractComponentRuntime {
 
     Map<String, String> transformsByAttributeId = new HashMap<String, String>();
     
-    ScriptEngine scriptEngine;
+    GroovyScriptEngineImpl scriptEngine;
     
     Map<String, ModelAttributeScriptHelper> helpers = new HashMap<>();
        
@@ -86,10 +85,14 @@ public class Transformer extends AbstractComponentRuntime {
         Set<String> attributeIds = data.keySet();
         for (String attributeId : attributeIds) {
             ModelAttribute attribute = inputModel.getAttributeById(attributeId);
-            ModelEntity entity = inputModel.getEntityById(attribute.getEntityId());
-            List<ModelAttribute> attributes = entity.getModelAttributes();
-            for (ModelAttribute modelAttribute : attributes) {
-                allAttributesForIncludedEntities.add(modelAttribute.getId());
+            if (attribute != null) {
+                ModelEntity entity = inputModel.getEntityById(attribute.getEntityId());
+                List<ModelAttribute> attributes = entity.getModelAttributes();
+                for (ModelAttribute modelAttribute : attributes) {
+                    allAttributesForIncludedEntities.add(modelAttribute.getId());
+                }
+            } else {
+                log.warn("Found an attribute that wasn't in the configured model.  The attribute id was: {}", attributeId);
             }
         }
         return allAttributesForIncludedEntities;
@@ -98,6 +101,7 @@ public class Transformer extends AbstractComponentRuntime {
     @SuppressWarnings("unchecked")
     @Override
 	public void handle(Message inputMessage, ISendMessageCallback callback, boolean unitOfWorkBoundaryReached) {
+        Thread.currentThread().setContextClassLoader(Transformer.class.getClassLoader());
         if (scriptEngine == null) {
             scriptEngine = new GroovyScriptEngineImpl();
         }
