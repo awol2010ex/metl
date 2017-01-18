@@ -192,6 +192,7 @@ public class ExploreDirectoryView extends VerticalLayout implements View {
     }
 
     protected void addChildren(Object item, List<FileInfo> files) {
+        if(files!=null && files.size()>0)
         for (FileInfo fileInfo : files) {
             table.addItem(new Object[] { new Date(fileInfo.getLastUpdated()), fileInfo.getSize() }, fileInfo);
             table.setParent(fileInfo, item);
