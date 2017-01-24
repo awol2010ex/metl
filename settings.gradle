@@ -38,3 +38,4 @@ include 'comp-unoffice-kafka'
 
 include 'metl-war-noplugins'
 include 'comp-unoffice-hprose'
+include 'comp-unoffice-mongodb'

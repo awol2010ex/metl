@@ -7,4 +7,4 @@ includeFlat 'metl-server', 'metl-core',  'metl-ui', 'resource-core',
 'comp-transform', 'comp-xml', 'comp-format', 'comp-email',
 'comp-execute', 'comp-test', 'comp-text', 'comp-webrequest', 
 'comp-stamp',
-'metl-war', 'metl-develop' ,'metl-patch-db2-97', 'comp-unoffice-kafka','comp-unoffice-hprose'
+'metl-war', 'metl-develop' ,'metl-patch-db2-97', 'comp-unoffice-kafka','comp-unoffice-hprose','comp-unoffice-mongodb'

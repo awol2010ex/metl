@@ -1,0 +1,104 @@
+<!--
+
+    Licensed to JumpMind Inc under one or more contributor
+    license agreements.  See the NOTICE file distributed
+    with this work for additional information regarding
+    copyright ownership.  JumpMind Inc licenses this file
+    to you under the GNU General Public License, version 3.0 (GPLv3)
+    (the "License"); you may not use this file except in compliance
+    with the License.
+
+    You should have received a copy of the GNU General Public License,
+    version 3.0 (GPLv3) along with this library; if not, see
+    <http://www.gnu.org/licenses/>.
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<definitions>
+
+  <component category='WRITER'
+             id='UnOffice Mongodb Writer'
+             inputMessageType='entity'
+             inputOutputModelsMatch='false'
+             outputMessageType='text'
+             supportsMultipleThreads='true'>
+    <name>UnOffice Mongodb Writer</name>
+    <className>com.unoffice.comp.mongodb.runtime.UnOfficeMongodbWriter</className>
+    <keywords>hardcode</keywords>
+    <description></description>
+    <settings>
+
+      <setting id='host'
+               required='true'
+               type='text'>
+        <name>Host</name>
+      </setting>
+
+      <setting id='port'
+               required='true'
+               type='integer'>
+        <name>Port</name>
+      </setting>
+
+
+      <setting id='db'
+               required='true'
+               type='text'>
+        <name>Db</name>
+      </setting>
+
+
+      <setting id='user'
+               required='true'
+               type='text'>
+        <name>User</name>
+      </setting>
+
+
+      <setting id='pwd'
+               required='true'
+               type='password'>
+        <name>Password</name>
+      </setting>
+
+      <setting id='collection'
+               required='true'
+               type='text'>
+        <name>Collection</name>
+      </setting>
+
+      <setting id='control.message.on.text.send'
+               required='false'
+               type='boolean'>
+        <name>Send Control Message on Text Send</name>
+        <defaultValue>false</defaultValue>
+      </setting>
+
+      <setting id='run.when'
+               required='false'
+               type='choice'>
+        <name>Run When</name>
+        <defaultValue>PER UNIT OF WORK</defaultValue>
+        <choices>
+          <choice>PER UNIT OF WORK</choice>
+          <choice>PER MESSAGE</choice>
+        </choices>
+      </setting>
+
+      <setting id='rows.per.message'
+               required='false'
+               type='integer'>
+        <name>Rows/Msg</name>
+        <defaultValue>1000</defaultValue>
+      </setting>
+    </settings>
+   </component>
+
+
+</definitions>

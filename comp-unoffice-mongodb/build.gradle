@@ -1,0 +1,15 @@
+apply from: '../metl-assemble/common.gradle'
+
+version = '1.0.0.' + pluginBuildNumber
+
+dependencies {
+    provided project(':metl-ui')   
+    compile project(':comp-abstract')
+    compile project(':resource-core')
+    compile project(':metl-core')
+    compile 'org.mongodb:mongo-java-driver:3.4.1'
+    testCompile project(path: ':metl-core', configuration: 'testArtifacts')
+
+    
+	
+}
