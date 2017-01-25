@@ -1,7 +1,7 @@
 apply from: '../metl-assemble/common.gradle'
 apply plugin: 'java'
 apply plugin: 'war'
-
+webAppDirName='../metl-war/src/main/webapp'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 buildscript {
@@ -87,4 +87,8 @@ gretty {
 
 gretty {
  extraResourceBase '../metl-war/src/main/webapp'
+}
+
+war{
+    from '../metl-war/src/main/webapp'
 }
