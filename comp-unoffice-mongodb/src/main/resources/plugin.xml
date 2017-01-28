@@ -27,45 +27,14 @@
              inputMessageType='entity'
              inputOutputModelsMatch='false'
              outputMessageType='text'
-             supportsMultipleThreads='true'>
+             supportsMultipleThreads='true'
+             resourceCategory='UnOfficeMongoDB'>
     <name>UnOffice Mongodb Writer</name>
     <className>com.unoffice.comp.mongodb.runtime.UnOfficeMongodbWriter</className>
     <keywords>hardcode</keywords>
     <description></description>
     <settings>
 
-      <setting id='host'
-               required='true'
-               type='text'>
-        <name>Host</name>
-      </setting>
-
-      <setting id='port'
-               required='true'
-               type='integer'>
-        <name>Port</name>
-      </setting>
-
-
-      <setting id='db'
-               required='true'
-               type='text'>
-        <name>Db</name>
-      </setting>
-
-
-      <setting id='user'
-               required='true'
-               type='text'>
-        <name>User</name>
-      </setting>
-
-
-      <setting id='pwd'
-               required='true'
-               type='password'>
-        <name>Password</name>
-      </setting>
 
       <setting id='collection'
                required='true'
@@ -101,4 +70,43 @@
    </component>
 
 
+  <resource id='UnOfficeMongoDB' resourceCategory='UnOfficeMongoDB'>
+  <name>UnOffice MongoDB</name>
+  <className>com.unoffice.comp.mongodb.resource.UnOfficeMongoDBResource</className>
+  <settings>
+    <setting id='host'
+             required='true'
+             type='text'>
+      <name>Host</name>
+    </setting>
+
+    <setting id='port'
+             required='true'
+             type='integer'>
+      <name>Port</name>
+    </setting>
+
+
+    <setting id='db'
+             required='true'
+             type='text'>
+      <name>Db</name>
+    </setting>
+
+
+    <setting id='user'
+             required='true'
+             type='text'>
+      <name>User</name>
+    </setting>
+
+
+    <setting id='pwd'
+             required='true'
+             type='password'>
+      <name>Password</name>
+    </setting>
+
+  </settings>
+  </resource>
 </definitions>

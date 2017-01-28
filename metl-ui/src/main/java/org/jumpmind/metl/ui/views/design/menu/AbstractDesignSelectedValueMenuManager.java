@@ -53,6 +53,9 @@ abstract public class AbstractDesignSelectedValueMenuManager extends AbstractSel
             } else if ("File|New|Resource|Directory|UnOffice Kafka Resource".equals(menuSelected)) {
                 navigator.addNewUnOfficeKafkaResource();
                 return true;
+            } else if ("File|New|Resource|UnOffice MongoDB Resource".equals(menuSelected)) {
+                navigator.addNewUnOfficeMongoDBResource();
+                return true;
             } else if ("File|New|Resource|Directory|SFTP".equals(menuSelected)) {
                 navigator.addNewSftpFileSystem();
                 return true;
@@ -105,7 +108,7 @@ abstract public class AbstractDesignSelectedValueMenuManager extends AbstractSel
                     "File|New|Resource|Database", "File|New|Resource|Directory|FTP", "File|New|Resource|Directory|File System",
                     "File|New|Resource|Directory|JMS", "File|New|Resource|Directory|SFTP", "File|New|Resource|Directory|SMB",
                     "File|New|Resource|HTTP", "File|New|Resource|Mail Session", "Edit|Rename"
-            ,"File|New|Resource|Directory|UnOffice Kafka Resource"
+            ,"File|New|Resource|Directory|UnOffice Kafka Resource","File|New|Resource|UnOffice MongoDB Resource"
             };
         } else {
             return null;

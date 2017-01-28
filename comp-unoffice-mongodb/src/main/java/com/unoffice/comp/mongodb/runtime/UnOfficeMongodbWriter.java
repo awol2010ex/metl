@@ -5,6 +5,7 @@ import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.unoffice.comp.mongodb.resource.UnOfficeMongoDBResource;
 import org.bson.Document;
 import org.jumpmind.metl.core.model.Model;
 import org.jumpmind.metl.core.model.ModelAttribute;
@@ -40,12 +41,9 @@ public class UnOfficeMongodbWriter extends AbstractComponentRuntime {
 
 
     /*mongodb params*/
-    String host ;
-    Integer port ;
     String db ;
     String collection;
-    String user ;
-    String pwd;
+    MongoClient mongoClient=null;
     @Override
     public void start() {
 
@@ -70,6 +68,10 @@ public class UnOfficeMongodbWriter extends AbstractComponentRuntime {
         if (inputModelAttributeList == null || inputModelAttributeList.size() == 0) {
             throw new IllegalStateException("No attributes  exists in  the first entity of the input model");
         }
+
+        if (getResourceRuntime() == null) {
+            throw new IllegalStateException("An MongoDB writer must have a mongoDB defined");
+        }
     }
 
     @Override
@@ -81,28 +83,17 @@ public class UnOfficeMongodbWriter extends AbstractComponentRuntime {
     @Override
     public void handle(Message inputMessage, ISendMessageCallback callback, boolean unitOfWorkBoundaryReached) {
 
-        host = getComponent().get("host");
-        port = getComponent().getInt("port",27017);
-        db = getComponent().get("db");
         collection = getComponent().get("collection");
-        user = getComponent().get("user");
-        pwd = getComponent().get("pwd");
 
         if (inputMessage instanceof EntityDataMessage) {
             ArrayList<EntityData> inputRows = ((EntityDataMessage) inputMessage).getPayload();
             if (inputRows != null && inputRows.size() > 0) {
 
 
-                ServerAddress serverAddress = new ServerAddress(host,port);
-                List<ServerAddress> addrs = new ArrayList<ServerAddress>();
-                addrs.add(serverAddress);
+                UnOfficeMongoDBResource resource=(UnOfficeMongoDBResource)this.getResourceRuntime();
 
-                MongoCredential credential = MongoCredential.createScramSha1Credential(user, db, pwd.toCharArray());
-                List<MongoCredential> credentials = new ArrayList<MongoCredential>();
-                credentials.add(credential);
-
-                MongoClient mongoClient = new MongoClient(addrs,credentials);
-
+                db =resource.getDb();
+                mongoClient=(MongoClient)this.getResourceReference();
                 try {
                     MongoDatabase mongoDatabase = mongoClient.getDatabase(db);
                     MongoCollection<Document> collectionObject = mongoDatabase.getCollection(collection);
@@ -124,13 +115,10 @@ public class UnOfficeMongodbWriter extends AbstractComponentRuntime {
 
                 }catch(Exception e){
                     log.error("",e);
+                    throw new RuntimeException(e);
                 }
                 finally {
-                    try {
-                        mongoClient.close();
-                    }catch(Exception e){
-                        log.error("",e);
-                    }
+
                     if (PER_MESSAGE.equals(runWhen) && controlMessageOnTextSend) {
                         callback.sendControlMessage();
                     }

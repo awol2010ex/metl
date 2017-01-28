@@ -48,7 +48,7 @@ public class ModelMenuManager extends AbstractDesignSelectedValueMenuManager {
                 "Edit|Cut",
                 "Edit|Copy",
                 "Edit|Remove",
-                "File|New|Resource|Directory|UnOffice Kafka Resource"
+                "File|New|Resource|Directory|UnOffice Kafka Resource","File|New|Resource|UnOffice MongoDB Resource"
         });        
         if (navigator.getContext().getClipboard()
                 .containsKey(CutCopyPasteManager.CLIPBOARD_OBJECT_TYPE)) {

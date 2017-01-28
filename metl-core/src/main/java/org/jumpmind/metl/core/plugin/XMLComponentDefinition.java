@@ -69,7 +69,9 @@ public class XMLComponentDefinition extends XMLAbstractDefinition {
         @XmlEnumValue("none")
         NONE, 
         @XmlEnumValue("any")
-        ANY
+        ANY,
+        @XmlEnumValue("UnOfficeMongoDB")
+        UNOFFICEMONGODB
     }
 
     @XmlElement(required = true)

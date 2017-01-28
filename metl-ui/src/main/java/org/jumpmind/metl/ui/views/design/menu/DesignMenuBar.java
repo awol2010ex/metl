@@ -56,6 +56,7 @@ public class DesignMenuBar extends AbstractMenuBar {
         add("Edit|Remove");
 
         add("File|New|Resource|Directory|UnOffice Kafka Resource");
+        add("File|New|Resource|UnOffice MongoDB Resource");
     }
 
     static class NothingSelectAction extends AbstractDesignSelectedValueMenuManager {

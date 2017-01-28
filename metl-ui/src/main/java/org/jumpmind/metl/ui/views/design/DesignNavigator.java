@@ -789,6 +789,9 @@ public class DesignNavigator extends VerticalLayout {
     public void addNewUnOfficeKafkaResource() {
         addNewResource("UnOfficeKafkaResource", "UnOffice Kafka Resource", Icons.QUEUE);
     }
+    public void addNewUnOfficeMongoDBResource() {
+        addNewResource("UnOfficeMongoDB", "UnOffice MongoDB", Icons.DATABASE);
+    }
 
     public void addNewSMBFileSystem() {
         addNewResource("SMB", "SMB Directory", Icons.FILE_SYSTEM);
