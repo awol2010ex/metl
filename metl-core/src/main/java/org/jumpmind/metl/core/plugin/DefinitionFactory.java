@@ -36,6 +36,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
@@ -61,13 +68,15 @@ public class DefinitionFactory implements IDefinitionFactory {
 
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
-    Map<String, Map<String, XMLAbstractDefinition>> definitionsByProjectVersionIdById;
+    protected Map<String, Map<String, XMLAbstractDefinition>> definitionsByProjectVersionIdById;
 
-    Map<String, List<XMLAbstractDefinition>> definitionsByPluginId;
+    protected Map<String, List<XMLAbstractDefinition>> definitionsByPluginId;
 
     protected IConfigurationService configurationService;
 
     protected IPluginManager pluginManager;
+
+    protected JAXBContext xmlContext;
 
     public DefinitionFactory() {
         definitionsByProjectVersionIdById = new HashMap<>();
@@ -80,41 +89,24 @@ public class DefinitionFactory implements IDefinitionFactory {
         this.pluginManager = pluginManager;
     }
 
-    protected String getConfigDir() {
-        String configDir = System.getProperty("org.jumpmind.metl.ui.init.config.dir");
-        if (isBlank(configDir)) {
-            configDir = System.getProperty("user.dir");
-        }
-
-        if (isBlank(System.getProperty("h2.baseDir"))) {
-            System.setProperty("h2.baseDir", configDir);
-        }
-        return configDir;
-    }
-
-    protected Properties loadProperties() {
-        Properties properties = new Properties();
-        String configDir = getConfigDir();
-        File configFile = new File(configDir, "metl.properties");
-        if (configFile.exists()) {
-            properties = new TypedProperties(configFile);
-        }
-        return properties;
-    }
     @Override
-    synchronized public void refresh() {
-
+    public void refresh() {
         String appDevelopWithoutplugins =loadProperties().getProperty("app.develop.withoutplugins");
-        if(!"true".equals(appDevelopWithoutplugins)) {
-            pluginManager.refresh();
-        }
+
+
         definitionsByProjectVersionIdById = new HashMap<>();
         definitionsByPluginId = new HashMap<>();
         if (pluginManager != null && configurationService != null) {
-            List<String> projectVersionIds = configurationService.findAllProjectVersionIds();
-            for (String projectVersionId : projectVersionIds) {
-                refresh(projectVersionId);
+            if(!"true".equals(appDevelopWithoutplugins)) {
+                pluginManager.refresh();
             }
+            List<String> projectVersionIds = configurationService.findAllProjectVersionIds();
+            ExecutorService executor = Executors.newFixedThreadPool(projectVersionIds.size(), new RefreshThreadFactory());
+            List<Future<?>> futures = new ArrayList<Future<?>>();
+            for (String projectVersionId : projectVersionIds) {
+                futures.add(executor.submit(() -> refresh(projectVersionId)));
+            }
+            awaitTermination(executor, futures);
         }
     }
 
@@ -123,90 +115,89 @@ public class DefinitionFactory implements IDefinitionFactory {
         long ts = System.currentTimeMillis();
         loadComponentsForClassloader(projectVersionId, "org.jumpmind.metl:metl-core:" + VersionUtils.getCurrentVersion(),
                 getClass().getClassLoader());
-
         String appDevelopWithoutplugins =loadProperties().getProperty("app.develop.withoutplugins");
-        if(!"true".equals(appDevelopWithoutplugins)) {
-            {
-                List<PluginRepository> remoteRepostiories = configurationService.findPluginRepositories();
-                List<ProjectVersionDefinitionPlugin> pvcps = configurationService.findProjectVersionComponentPlugins(projectVersionId);
-                GenericVersionScheme versionScheme = new GenericVersionScheme();
-                for (Plugin configuredPlugin : configurationService.findPlugins()) {
-                    boolean matched = false;
-                    for (ProjectVersionDefinitionPlugin pvcp : pvcps) {
-                        if (pvcp.matches(configuredPlugin)) {
-                            try {
-                                matched = true;
-                                String latestVersion = pluginManager.getLatestLocalVersion(pvcp.getArtifactGroup(), pvcp.getArtifactName());
-                                if (isNotBlank(latestVersion)) {
-                                    Version version = versionScheme.parseVersion(latestVersion);
-                                    if (!pvcp.getArtifactVersion().equals(latestVersion)) {
-                                        Version previousVersion = versionScheme.parseVersion(pvcp.getArtifactVersion());
-                                        if (previousVersion.compareTo(version) == -1) {
-                                            if (!pvcp.isPinVersion()) {
-                                                logger.info("Upgrading {}:{} from {} to {}", pvcp.getArtifactGroup(), pvcp.getArtifactName(),
-                                                        pvcp.getArtifactVersion(), latestVersion);
-                                                pvcp.setArtifactVersion(latestVersion);
-                                                pvcp.setLatestArtifactVersion(latestVersion);
-                                            } else {
-                                                logger.info("Not upgrading {}:{} from {} to {} because the version is pinned",
-                                                        pvcp.getArtifactGroup(), pvcp.getArtifactName(), pvcp.getArtifactVersion(), latestVersion);
-                                                pvcp.setLatestArtifactVersion(latestVersion);
-                                            }
-                                            configurationService.save(pvcp);
-                                        } else {
-                                            logger.info(
-                                                    "The latest version in the local repository was older than the configured version.  The configured version was {}:{}:{}.  "
-                                                            + "The latest version is {}",
-                                                    pvcp.getArtifactGroup(), pvcp.getArtifactName(), pvcp.getArtifactVersion(), latestVersion);
-                                        }
-                                    }
-                                }
-
-                                load(projectVersionId, pvcp.getArtifactGroup(), pvcp.getArtifactName(), pvcp.getArtifactVersion(),
-                                        remoteRepostiories);
-
-                            } catch (InvalidVersionSpecificationException e) {
-                                logger.error("", e);
-                            }
-                        }
-                    }
-
-                    if (!matched) {
-                        String latestVersion = pluginManager.getLatestLocalVersion(configuredPlugin.getArtifactGroup(),
-                                configuredPlugin.getArtifactName());
-                        if (latestVersion != null) {
-                            String pluginId = load(projectVersionId, configuredPlugin.getArtifactGroup(), configuredPlugin.getArtifactName(),
-                                    latestVersion, remoteRepostiories);
-
-                            List<XMLAbstractDefinition> definitions = definitionsByPluginId.get(pluginId);
-                            if (definitions != null) {
-                                for (XMLAbstractDefinition definition : definitions) {
-                                    ProjectVersionDefinitionPlugin plugin = new ProjectVersionDefinitionPlugin();
-                                    plugin.setProjectVersionId(projectVersionId);
-                                    plugin.setDefinitionTypeId(definition.getId());
-                                    plugin.setDefinitionName(definition.getName());
-                                    plugin.setArtifactGroup(configuredPlugin.getArtifactGroup());
-                                    plugin.setArtifactName(configuredPlugin.getArtifactName());
-                                    plugin.setArtifactVersion(latestVersion);
-                                    plugin.setLatestArtifactVersion(latestVersion);
-                                    if (definition instanceof XMLComponentDefinition) {
-                                        plugin.setDefinitionType(DEFINTION_TYPE_COMPONENT);
-                                    } else if (definition instanceof XMLResourceDefinition) {
-                                        plugin.setDefinitionType(DEFINTION_TYPE_RESOURCE);
+        if("true".equals(appDevelopWithoutplugins)) {
+           return;
+        }
+        List<PluginRepository> remoteRepostiories = configurationService.findPluginRepositories();
+        List<ProjectVersionDefinitionPlugin> pvcps = configurationService.findProjectVersionComponentPlugins(projectVersionId);
+        GenericVersionScheme versionScheme = new GenericVersionScheme();
+        for (Plugin configuredPlugin : configurationService.findPlugins()) {
+            boolean matched = false;
+            for (ProjectVersionDefinitionPlugin pvcp : pvcps) {
+                if (pvcp.matches(configuredPlugin)) {
+                    try {
+                        matched = true;
+                        String latestVersion = pluginManager.getLatestLocalVersion(pvcp.getArtifactGroup(), pvcp.getArtifactName());
+                        if (isNotBlank(latestVersion)) {
+                            Version version = versionScheme.parseVersion(latestVersion);
+                            if (!pvcp.getArtifactVersion().equals(latestVersion)) {
+                                Version previousVersion = versionScheme.parseVersion(pvcp.getArtifactVersion());
+                                if (previousVersion.compareTo(version) == -1) {
+                                    if (!pvcp.isPinVersion()) {
+                                        logger.info("Upgrading {}:{} from {} to {}", pvcp.getArtifactGroup(), pvcp.getArtifactName(),
+                                                pvcp.getArtifactVersion(), latestVersion);
+                                        pvcp.setArtifactVersion(latestVersion);
+                                        pvcp.setLatestArtifactVersion(latestVersion);
                                     } else {
-                                        throw new IllegalStateException("Unknown definition type");
+                                        logger.info("Not upgrading {}:{} from {} to {} because the version is pinned",
+                                                pvcp.getArtifactGroup(), pvcp.getArtifactName(), pvcp.getArtifactVersion(), latestVersion);
+                                        pvcp.setLatestArtifactVersion(latestVersion);
                                     }
-                                    configurationService.save(plugin);
+                                    configurationService.save(pvcp);
+                                } else {
+                                    logger.info(
+                                            "The latest version in the local repository was older than the configured version.  The configured version was {}:{}:{}.  "
+                                                    + "The latest version is {}",
+                                            pvcp.getArtifactGroup(), pvcp.getArtifactName(), pvcp.getArtifactVersion(), latestVersion);
                                 }
-                            } else {
-                                logger.warn("Could not find a component in the {} plugin", pluginId);
                             }
-
-                        } else {
-                            logger.warn("Could not find a registered plugin for {}:{}", configuredPlugin.getArtifactGroup(),
-                                    configuredPlugin.getArtifactName());
                         }
+
+                        load(projectVersionId, pvcp.getArtifactGroup(), pvcp.getArtifactName(), pvcp.getArtifactVersion(),
+                                remoteRepostiories);
+
+                    } catch (InvalidVersionSpecificationException e) {
+                        logger.error("", e);
                     }
+                }
+            }
+
+            if (!matched) {
+                String latestVersion = pluginManager.getLatestLocalVersion(configuredPlugin.getArtifactGroup(),
+                        configuredPlugin.getArtifactName());
+                if (latestVersion != null) {
+                    String pluginId = load(projectVersionId, configuredPlugin.getArtifactGroup(), configuredPlugin.getArtifactName(),
+                            latestVersion, remoteRepostiories);
+
+                    List<XMLAbstractDefinition> definitions = definitionsByPluginId.get(pluginId);
+                    if (definitions != null) {
+                        definitions = new ArrayList<>(definitionsByPluginId.get(pluginId));
+                        for (XMLAbstractDefinition definition : definitions) {
+                            ProjectVersionDefinitionPlugin plugin = new ProjectVersionDefinitionPlugin();
+                            plugin.setProjectVersionId(projectVersionId);
+                            plugin.setDefinitionTypeId(definition.getId());
+                            plugin.setDefinitionName(definition.getName());
+                            plugin.setArtifactGroup(configuredPlugin.getArtifactGroup());
+                            plugin.setArtifactName(configuredPlugin.getArtifactName());
+                            plugin.setArtifactVersion(latestVersion);
+                            plugin.setLatestArtifactVersion(latestVersion);
+                            if (definition instanceof XMLComponentDefinition) {
+                                plugin.setDefinitionType(DEFINTION_TYPE_COMPONENT);
+                            } else if (definition instanceof XMLResourceDefinition) {
+                                plugin.setDefinitionType(DEFINTION_TYPE_RESOURCE);
+                            } else {
+                                throw new IllegalStateException("Unknown definition type");
+                            }
+                            configurationService.save(plugin);
+                        }
+                    } else {
+                        logger.warn("Could not find a component in the {} plugin", pluginId);
+                    }
+
+                } else {
+                    logger.warn("Could not find a registered plugin for {}:{}", configuredPlugin.getArtifactGroup(),
+                            configuredPlugin.getArtifactName());
                 }
             }
         }
@@ -311,18 +302,25 @@ public class DefinitionFactory implements IDefinitionFactory {
 
     protected void loadComponentsForClassloader(String projectVersionId, String pluginId, ClassLoader classLoader) {
         try {
-
-            JAXBContext jc = JAXBContext.newInstance(XMLDefinitions.class, XMLComponentDefinition.class, XMLSetting.class, XMLSettings.class,
-                    XMLSettingChoices.class, ObjectFactory.class);
-            Unmarshaller unmarshaller = jc.createUnmarshaller();
-            List<InputStream> componentXmls = new ArrayList<>();
-            componentXmls.addAll(loadResources("plugin.xml", classLoader));
-            componentXmls.addAll(loadResources("component.xml", classLoader));
             Map<String, XMLAbstractDefinition> componentsById = definitionsByProjectVersionIdById.get(projectVersionId);
             if (componentsById == null) {
                 componentsById = new HashMap<>();
                 definitionsByProjectVersionIdById.put(projectVersionId, componentsById);
             }
+
+            if (xmlContext == null) {
+                synchronized (this) {
+                    if (xmlContext == null) {
+                        xmlContext = JAXBContext.newInstance(XMLDefinitions.class, XMLComponentDefinition.class, XMLSetting.class,
+                                XMLSettings.class, XMLSettingChoices.class, ObjectFactory.class);
+                    }
+                }
+            }
+            Unmarshaller unmarshaller = xmlContext.createUnmarshaller();
+            List<InputStream> componentXmls = new ArrayList<>();
+            componentXmls.addAll(loadResources("plugin.xml", classLoader));
+            componentXmls.addAll(loadResources("component.xml", classLoader));
+
             try {
                 for (InputStream inputStream : componentXmls) {
                     InputStreamReader reader = new InputStreamReader(inputStream);
@@ -395,7 +393,6 @@ public class DefinitionFactory implements IDefinitionFactory {
                 for (InputStream inputStream : componentXmls) {
                     IOUtils.closeQuietly(inputStream);
                 }
-
             }
         } catch (RuntimeException e) {
             throw e;
@@ -404,7 +401,7 @@ public class DefinitionFactory implements IDefinitionFactory {
         }
     }
 
-    private final void addXMLAbstractDefinition(String pluginId, XMLAbstractDefinition definition) {
+    private synchronized final void addXMLAbstractDefinition(String pluginId, XMLAbstractDefinition definition) {
         List<XMLAbstractDefinition> componentsForPluginId = definitionsByPluginId.get(pluginId);
         if (componentsForPluginId == null) {
             componentsForPluginId = new ArrayList<>();
@@ -430,5 +427,72 @@ public class DefinitionFactory implements IDefinitionFactory {
         } catch (IOException e) {
             throw new IoException(e);
         }
+    }
+
+    protected void awaitTermination(ExecutorService executor, List<Future<?>> futures) {
+        executor.shutdown();
+        try {
+            if (executor.awaitTermination(1, TimeUnit.HOURS)) {
+                for (Future<?> future : futures) {
+                    if (future.isDone()) {
+                        future.get();
+                    }
+                }
+            } else {
+                executor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            executor.shutdownNow();
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause != null) {
+                if (cause instanceof RuntimeException) {
+                    throw (RuntimeException) cause;
+                } else {
+                    throw new RuntimeException(cause);
+                }
+            }
+            throw new RuntimeException(e);
+        }
+    }
+
+    class RefreshThreadFactory implements ThreadFactory {
+        AtomicInteger threadNumber = new AtomicInteger(1);
+
+        public Thread newThread(Runnable runnable) {
+            Thread thread = new Thread(runnable);
+            thread.setName("refresh-plugins-" + threadNumber.getAndIncrement());
+            if (thread.isDaemon()) {
+                thread.setDaemon(false);
+            }
+            if (thread.getPriority() != Thread.NORM_PRIORITY) {
+                thread.setPriority(Thread.NORM_PRIORITY);
+            }
+            return thread;
+        }
+    }
+
+
+    protected String getConfigDir() {
+        String configDir = System.getProperty("org.jumpmind.metl.ui.init.config.dir");
+        if (isBlank(configDir)) {
+            configDir = System.getProperty("user.dir");
+        }
+
+        if (isBlank(System.getProperty("h2.baseDir"))) {
+            System.setProperty("h2.baseDir", configDir);
+        }
+        return configDir;
+    }
+
+    protected Properties loadProperties() {
+        Properties properties = new Properties();
+        String configDir = getConfigDir();
+        File configFile = new File(configDir, "metl.properties");
+        if (configFile.exists()) {
+            properties = new TypedProperties(configFile);
+        }
+        return properties;
     }
 }
