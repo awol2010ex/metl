@@ -2,6 +2,7 @@ package org.jumpmind.metl.core.persist;
 
 import static org.apache.commons.lang.StringUtils.isNotBlank;
 
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -16,8 +17,6 @@ import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.tools.ant.Project;
-import org.jgrapht.experimental.dag.DirectedAcyclicGraph;
-import org.jgrapht.graph.DefaultEdge;
 import org.jumpmind.db.model.Column;
 import org.jumpmind.db.model.Table;
 import org.jumpmind.db.platform.IDatabasePlatform;
@@ -26,14 +25,15 @@ import org.jumpmind.db.sql.DmlStatement.DmlType;
 import org.jumpmind.db.sql.ISqlTemplate;
 import org.jumpmind.db.sql.ISqlTransaction;
 import org.jumpmind.db.sql.Row;
+import org.jumpmind.exception.IoException;
 import org.jumpmind.metl.core.model.AbstractObject;
+import org.jumpmind.metl.core.model.Agent;
 import org.jumpmind.metl.core.model.AuditEvent;
 import org.jumpmind.metl.core.model.Flow;
 import org.jumpmind.metl.core.model.FlowName;
 import org.jumpmind.metl.core.model.Model;
 import org.jumpmind.metl.core.model.ModelName;
 import org.jumpmind.metl.core.model.ProjectVersion;
-import org.jumpmind.metl.core.model.ProjectVersionDependency;
 import org.jumpmind.metl.core.model.ReleasePackage;
 import org.jumpmind.metl.core.model.ReleasePackageProjectVersion;
 import org.jumpmind.metl.core.model.Resource;
@@ -44,6 +44,8 @@ import org.jumpmind.metl.core.util.GeneralUtils;
 import org.jumpmind.metl.core.util.MessageException;
 import org.jumpmind.metl.core.util.VersionUtils;
 import org.jumpmind.persist.IPersistenceManager;
+import org.jumpmind.symmetric.io.data.DbExport;
+import org.jumpmind.symmetric.io.data.DbExport.Format;
 import org.jumpmind.util.AppUtils;
 import org.jumpmind.util.LinkedCaseInsensitiveMap;
 
@@ -113,16 +115,15 @@ public class ImportExportService extends AbstractService implements IImportExpor
     
     private IDatabasePlatform databasePlatform;
     private IConfigurationService configurationService;
-    private ISecurityService securityService;
     private String tablePrefix;
     private String[] columnsToExclude;
     private Set<String> importsToAudit = new HashSet<>();
+    private Set<String> projectsExported = new HashSet<>();
 
     public ImportExportService(IDatabasePlatform databasePlatform,
             IPersistenceManager persistenceManager, String tablePrefix,
             IConfigurationService configurationService, ISecurityService securityService) {
-        super(persistenceManager, tablePrefix);
-        this.securityService = securityService;
+        super(securityService, persistenceManager, tablePrefix);
         this.databasePlatform = databasePlatform;
         this.configurationService = configurationService;
         this.tablePrefix = tablePrefix;
@@ -144,6 +145,7 @@ public class ImportExportService extends AbstractService implements IImportExpor
     
     @Override
     public String exportProjectVersion(String projectVersionId, String userId) {
+        projectsExported.clear();
         List<FlowName> flows = new ArrayList<>();
         flows.addAll(configurationService.findFlowsInProject(projectVersionId, true));
         flows.addAll(configurationService.findFlowsInProject(projectVersionId, false));
@@ -169,24 +171,13 @@ public class ImportExportService extends AbstractService implements IImportExpor
 
     @Override
     public String exportReleasePackage(String releasePackageId, String userId) {        
-        
+        projectsExported.clear();
         ConfigData exportData = initExport();
         ReleasePackage releasePackage = configurationService.findReleasePackage(releasePackageId);
         
-        DirectedAcyclicGraph<String, DefaultEdge> dag = new DirectedAcyclicGraph<String, DefaultEdge>(DefaultEdge.class);
-        for (ReleasePackageProjectVersion rppv : releasePackage.getProjectVersions()) {
-            dag.addVertex(rppv.getProjectVersionId());
-            List<ProjectVersionDependency> dependencies = configurationService.findProjectDependencies(rppv.getProjectVersionId());
-            for (ProjectVersionDependency dependency: dependencies) {
-                dag.addVertex(dependency.getTargetProjectVersionId());
-                dag.addEdge(dependency.getTargetProjectVersionId(), rppv.getProjectVersionId());
-            }
-        }      
-        
-        //add projects to the export in topological order
-        Iterator<String> itr = dag.iterator();
-        while (itr.hasNext()) {                        
-            String projectVersionId = itr.next();
+        List<ReleasePackageProjectVersion> versions = new ReleasePackageProjectVersionSorter(configurationService).sort(releasePackage);
+        for (ReleasePackageProjectVersion releasePackageProjectVersion : versions) {
+            String projectVersionId = releasePackageProjectVersion.getProjectVersionId();
             initProjectVersionExport(exportData, projectVersionId);            
             Set<String> flowIds = new HashSet<String>();
             Set<String> modelIds = new HashSet<String>();
@@ -215,9 +206,12 @@ public class ImportExportService extends AbstractService implements IImportExpor
     
     protected void addProjectVersionToConfigData(String projectVersionId,ConfigData exportData,
             Set<String> flowIds, Set<String> modelIds, Set<String> resourceIds) {
+        
+        ProjectVersion version = configurationService.findProjectVersion(projectVersionId);
         ProjectVersionData projectVersionData = exportData.getProjectVersionData().get(exportData.getProjectVersionData().size()-1);
         
         addConfigData(projectVersionData.getProjectData(), PROJECT_SQL, projectVersionId, null);            
+        projectsExported.add(version.getProjectId());
         for (String flowId : flowIds) {
             addConfigData(projectVersionData.getFlowData(), FLOW_SQL, projectVersionId, flowId);
         }
@@ -287,28 +281,34 @@ public class ImportExportService extends AbstractService implements IImportExpor
     }
 
     private void addConfigData(List<TableData> tableData, String[][] sqlElements,
-            String projectVersionId, String keyValue) {
+            String projectVersionId, String keyValue) {        
+        ProjectVersion version = configurationService.findProjectVersion(projectVersionId);
         for (int i = 0; i <= sqlElements.length - 1; i++) {
-            String[] entry = sqlElements[i];
-
-            List<Row> rows = getConfigTableData(String.format(entry[SQL], 
-                    tablePrefix, projectVersionId, keyValue));
-            
-            for (Row row : rows) {
-                if (isPassword(row.getString("NAME", false))) {
-                    String value = row.getString("VALUE", false);
-                    if (isNotBlank(value)) {
-                        if (value.startsWith(SecurityConstants.PREFIX_ENC)) {
-                            try {
-                                row.put("VALUE", securityService.decrypt(
-                                        value.substring(SecurityConstants.PREFIX_ENC.length() - 1)));
-                            } catch (Exception e) {
+            if (!sqlElements[0][0].equalsIgnoreCase("_PROJECT") ||
+                    version == null || !projectsExported.contains(version.getProjectId()) ) {                
+                String[] entry = sqlElements[i];
+                List<Row> rows = getConfigTableData(String.format(entry[SQL], 
+                        tablePrefix, projectVersionId, keyValue));
+                for (Row row : rows) {
+                    if (isPassword(row.getString("NAME", false))) {
+                        String value = row.getString("VALUE", false);
+                        if (isNotBlank(value)) {
+                            if (value.startsWith(SecurityConstants.PREFIX_ENC)) {
+                                try {
+                                    row.put("VALUE", securityService.decrypt(
+                                            value.substring(SecurityConstants.PREFIX_ENC.length() - 1)));
+                                } catch (Exception e) {
+                                }
                             }
                         }
                     }
+                    tableData.get(i).rows.put(getPkDataAsString(row, entry[KEY_COLUMNS]), row);
                 }
-                tableData.get(i).rows.put(getPkDataAsString(row, entry[KEY_COLUMNS]), row);
             }
+        }
+        
+        if (version != null) {
+            projectsExported.add(version.getProjectId());
         }
     }
 
@@ -794,6 +794,70 @@ public class ImportExportService extends AbstractService implements IImportExpor
             tableData.add(new TableData(tablePrefix + sqlElements[i][0]));
         }
     }
+    
+    @Override
+    public String export(Agent agent) {
+        try {
+            StringBuilder out = new StringBuilder();
+
+            /* @formatter:off */
+            String[][] CONFIG = {
+                    {"AGENT", "WHERE ID='%2$s' AND DELETED=0"," ORDER BY ID",                                                                                                                                                                              },
+                    {"AGENT_DEPLOYMENT", "WHERE AGENT_ID='%2$s'"," ORDER BY ID",                                                                                                                                                                                                                                },
+                    {"AGENT_DEPLOYMENT_PARAMETER", "WHERE AGENT_DEPLOYMENT_ID in (SELECT ID FROM %1$s_AGENT_DEPLOYMENT WHERE AGENT_ID='%2$s')"," ORDER BY ID",                                                                                                                                                                                                                         },
+                    {"AGENT_PARAMETER", "WHERE AGENT_ID='%2$s'"," ORDER BY ID",                                                                                                                                                                                                            },
+                    {"AGENT_RESOURCE_SETTING", "WHERE AGENT_ID='%2$s'"," ORDER BY RESOURCE_ID, NAME",                                                                                                                                                       },
+            };
+            /* @formatter:on */
+
+            for (int i = CONFIG.length - 1; i >= 0; i--) {
+                String[] entry = CONFIG[i];
+                out.append(String.format("DELETE FROM %s_%s %s;\n", tablePrefix, entry[0],
+                        String.format(entry[1], tablePrefix, agent.getId()).replace("AND DELETED=0", "")));
+            }
+
+            for (int i = 0; i < CONFIG.length; i++) {
+                String[] entry = CONFIG[i];
+                out.append(export(entry[0], entry[1], entry[2], agent));
+            }
+
+            return out.toString();
+        } catch (IOException e) {
+            throw new IoException(e);
+        }
+    }
+    
+    protected String export(String table, String where, String orderBy, Agent agent) throws IOException {
+        DbExport export = new DbExport(databasePlatform);
+        export.setWhereClause(String.format(where + orderBy, tablePrefix, agent.getId()));
+        export.setFormat(Format.SQL);
+        export.setUseQuotedIdentifiers(false);
+        export.setNoCreateInfo(true);
+        return export.exportTables(new String[] { String.format("%s_%s", tablePrefix, table) });
+    }
+
+    protected String export(String table, String where, String orderBy, ProjectVersion projectVersion, String[] columnsToExclude)
+            throws IOException {
+        DbExport export = new DbExport(databasePlatform);
+        export.setWhereClause(String.format(where + orderBy, tablePrefix, projectVersion.getId(), projectVersion.getProjectId()));
+        export.setFormat(Format.SQL);
+        export.setUseQuotedIdentifiers(false);
+        export.setNoCreateInfo(true);
+        export.setExcludeColumns(columnsToExclude);
+        return export.exportTables(new String[] { String.format("%s_%s", tablePrefix, table) });
+    }
+
+    protected String export(String table, String where, String orderBy, ProjectVersion projectVersion, Flow flow, String componentIds,
+            String[] columnsToExclude) throws IOException {
+        DbExport export = new DbExport(databasePlatform);
+        export.setWhereClause(String.format(where + orderBy, tablePrefix, projectVersion.getId(), projectVersion.getProjectId(), flow.getId(),
+                componentIds));
+        export.setFormat(Format.SQL);
+        export.setUseQuotedIdentifiers(false);
+        export.setNoCreateInfo(true);
+        export.setExcludeColumns(columnsToExclude);
+        return export.exportTables(new String[] { String.format("%s_%s", tablePrefix, table) });
+    }
 
     static class TableData {
 
@@ -945,6 +1009,5 @@ public class ImportExportService extends AbstractService implements IImportExpor
             this.deletesToProcess = new HashMap<String, TableData>();
         }
         Map<String, TableData> deletesToProcess;
-
     }
 }

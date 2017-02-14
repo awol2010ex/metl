@@ -53,7 +53,10 @@ public class DesignMenuBar extends AbstractMenuBar {
         add("Edit|Copy");
         add("Edit|Paste");
         addSeparator("Edit");
+        add("Edit|Change Dependency Version");
+        addSeparator("Edit");
         add("Edit|Remove");
+
 
         add("File|New|Resource|Directory|UnOffice Kafka Resource");
         add("File|New|Resource|UnOffice MongoDB Resource");

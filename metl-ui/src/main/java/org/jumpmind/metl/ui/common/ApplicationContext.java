@@ -34,6 +34,8 @@ import org.jumpmind.metl.core.model.User;
 import org.jumpmind.metl.core.persist.IConfigurationService;
 import org.jumpmind.metl.core.persist.IExecutionService;
 import org.jumpmind.metl.core.persist.IImportExportService;
+import org.jumpmind.metl.core.persist.IOperationsService;
+import org.jumpmind.metl.core.persist.IPluginService;
 import org.jumpmind.metl.core.plugin.IDefinitionFactory;
 import org.jumpmind.metl.core.plugin.IPluginManager;
 import org.jumpmind.metl.core.runtime.IAgentManager;
@@ -91,6 +93,12 @@ public class ApplicationContext implements Serializable {
     
     @Autowired
     ISecurityService securityService;
+    
+    @Autowired
+    IOperationsService operationsSerivce;
+    
+    @Autowired
+    IPluginService pluginService;
     
     @Autowired
     String configDir;
@@ -188,6 +196,14 @@ public class ApplicationContext implements Serializable {
 
     public void setClipboard(Map<String, Object> clipboard) {
         this.clipboard = clipboard;
+    }
+    
+    public IOperationsService getOperationsSerivce() {
+        return operationsSerivce;
+    }
+    
+    public IPluginService getPluginService() {
+        return pluginService;
     }
 
     public boolean isReadOnly(ProjectVersion projectVersion, Privilege privilege) {

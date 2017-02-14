@@ -88,6 +88,8 @@ abstract public class AbstractDesignSelectedValueMenuManager extends AbstractSel
                 return true;
             } else if ("Edit|Paste".equals(menuSelected)) {
                 navigator.doPaste();
+            } else if ("Edit|Change Dependency Version".equals(menuSelected)) {
+                navigator.doChangeDependencyVersion();
             }
         }
         return handled;

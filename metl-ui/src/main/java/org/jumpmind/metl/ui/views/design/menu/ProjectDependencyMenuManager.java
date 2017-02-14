@@ -16,13 +16,19 @@ public class ProjectDependencyMenuManager extends AbstractDesignSelectedValueMen
         } else {
             return false;
         }
-    }
+    }    
     
     @Override
     protected String[] getDisabledPaths(Object selected) {
-        return (String[])ArrayUtils.addAll(super.getDisabledPaths(selected), new String[] {
-                "Edit|Copy"
-        });
+        if (isReadOnly(selected)) {
+            return (String[])ArrayUtils.addAll(super.getDisabledPaths(selected), new String[] { "Edit|Remove",
+                    "Edit|Change Dependency Version"
+            });            
+        } else {
+            return (String[])ArrayUtils.addAll(super.getDisabledPaths(selected), new String[] {
+                    "Edit|Copy"
+            });
+        }
     }
     
     @Override
@@ -40,6 +46,7 @@ public class ProjectDependencyMenuManager extends AbstractDesignSelectedValueMen
                 "File|New|Resource|Directory|SMB",
                 "File|New|Resource|HTTP",
                 "File|New|Resource|Mail Session",
+                "Edit|Change Dependency Version",
                 "Edit|Remove",
                 "File|New|Resource|Directory|UnOffice Kafka Resource","File|New|Resource|UnOffice MongoDB Resource"
         });

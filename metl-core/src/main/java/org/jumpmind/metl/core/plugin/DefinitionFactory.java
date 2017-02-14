@@ -57,6 +57,7 @@ import org.jumpmind.metl.core.model.Plugin;
 import org.jumpmind.metl.core.model.PluginRepository;
 import org.jumpmind.metl.core.model.ProjectVersionDefinitionPlugin;
 import org.jumpmind.metl.core.persist.IConfigurationService;
+import org.jumpmind.metl.core.persist.IPluginService;
 import org.jumpmind.metl.core.plugin.XMLComponentDefinition.ResourceCategory;
 import org.jumpmind.metl.core.plugin.XMLSetting.Type;
 import org.jumpmind.metl.core.util.VersionUtils;
@@ -73,6 +74,8 @@ public class DefinitionFactory implements IDefinitionFactory {
     protected Map<String, List<XMLAbstractDefinition>> definitionsByPluginId;
 
     protected IConfigurationService configurationService;
+    
+    protected IPluginService pluginService;
 
     protected IPluginManager pluginManager;
 
@@ -83,48 +86,68 @@ public class DefinitionFactory implements IDefinitionFactory {
         definitionsByPluginId = new HashMap<>();
     }
 
-    public DefinitionFactory(IConfigurationService configurationService, IPluginManager pluginManager) {
+    public DefinitionFactory(IPluginService pluginService, IConfigurationService configurationService, IPluginManager pluginManager) {
         this();
         this.configurationService = configurationService;
         this.pluginManager = pluginManager;
+        this.pluginService = pluginService;
     }
 
     @Override
     public void refresh() {
         String appDevelopWithoutplugins =loadProperties().getProperty("app.develop.withoutplugins");
 
-
+        long ts = System.currentTimeMillis();
         definitionsByProjectVersionIdById = new HashMap<>();
         definitionsByPluginId = new HashMap<>();
         if (pluginManager != null && configurationService != null) {
             if(!"true".equals(appDevelopWithoutplugins)) {
                 pluginManager.refresh();
             }
+            List<Plugin> distinctPlugins = pluginService.findDistinctPlugins();
             List<String> projectVersionIds = configurationService.findAllProjectVersionIds();
-            if (projectVersionIds.size() > 0) {
-                ExecutorService executor = Executors.newFixedThreadPool(projectVersionIds.size(), new RefreshThreadFactory());
+            int numOfVersions = projectVersionIds.size(); 
+            if (numOfVersions > 0) {
+                int numOfExecutors = numOfVersions > 10 ? numOfVersions/2 : numOfVersions;
+                ExecutorService executor = Executors.newFixedThreadPool(numOfExecutors, new RefreshThreadFactory());
                 List<Future<?>> futures = new ArrayList<Future<?>>();
                 for (String projectVersionId : projectVersionIds) {
-                    futures.add(executor.submit(() -> refresh(projectVersionId)));
+                    futures.add(executor.submit(() -> refresh(projectVersionId, distinctPlugins)));
                 }
                 awaitTermination(executor, futures);
             }
+            logger.info("It took {}ms to refresh {} project versions", (System.currentTimeMillis()-ts), numOfVersions);
         }
     }
 
     @Override
     public void refresh(String projectVersionId) {
+
+
+
+        List<Plugin> distinctPlugins = pluginService.findDistinctPlugins();
+        refresh(projectVersionId, distinctPlugins);
+    }        
+        
+    protected void refresh(String projectVersionId, List<Plugin> distinctPlugins) {
+
+        String appDevelopWithoutplugins =loadProperties().getProperty("app.develop.withoutplugins");
+
+
         long ts = System.currentTimeMillis();
         loadComponentsForClassloader(projectVersionId, "org.jumpmind.metl:metl-core:" + VersionUtils.getCurrentVersion(),
                 getClass().getClassLoader());
-        String appDevelopWithoutplugins =loadProperties().getProperty("app.develop.withoutplugins");
+
         if("true".equals(appDevelopWithoutplugins)) {
-           return;
+            return;
         }
-        List<PluginRepository> remoteRepostiories = configurationService.findPluginRepositories();
+
+
+        List<PluginRepository> remoteRepostiories = pluginService.findPluginRepositories();
         List<ProjectVersionDefinitionPlugin> pvcps = configurationService.findProjectVersionComponentPlugins(projectVersionId);
-        GenericVersionScheme versionScheme = new GenericVersionScheme();
-        for (Plugin configuredPlugin : configurationService.findPlugins()) {
+        GenericVersionScheme versionScheme = new GenericVersionScheme();        
+        for (Plugin configuredPlugin : distinctPlugins) {
+            logger.info("configuring: {}:{}", configuredPlugin.toString(), projectVersionId);
             boolean matched = false;
             for (ProjectVersionDefinitionPlugin pvcp : pvcps) {
                 if (pvcp.matches(configuredPlugin)) {
@@ -155,19 +178,21 @@ public class DefinitionFactory implements IDefinitionFactory {
                                 }
                             }
                         }
-
+                        
                         matched = null != load(projectVersionId, pvcp.getArtifactGroup(), pvcp.getArtifactName(), pvcp.getArtifactVersion(),
                                 remoteRepostiories);
                         
                         if (!matched) {
                             logger.warn("Deleting the reference to {}:{}:{}", pvcp.getArtifactGroup(), pvcp.getArtifactName(), pvcp.getArtifactVersion());
-                            configurationService.delete(pvcp);
-                            configurationService.delete(configuredPlugin);
-                        }
+                            pluginService.delete(pvcp);
+                            pluginService.delete((Plugin)pvcp);
+                        }                        
 
                     } catch (InvalidVersionSpecificationException e) {
                         logger.error("", e);
-                    }
+                    } 
+                    
+                    break;
                 }
             }
 
@@ -227,9 +252,8 @@ public class DefinitionFactory implements IDefinitionFactory {
     protected String load(String projectVersionId, String artifactGroup, String artifactName, String artifactVersion,
             List<PluginRepository> pluginRepository) {
         ClassLoader classLoader = pluginManager.getClassLoader(artifactGroup, artifactName, artifactVersion, pluginRepository);
-        String pluginId = null;
+        String pluginId = pluginManager.toPluginId(artifactGroup, artifactName, artifactVersion);
         if (classLoader != null) {
-            pluginId = pluginManager.toPluginId(artifactGroup, artifactName, artifactVersion);
             loadComponentsForClassloader(projectVersionId, pluginId, classLoader);            
         } else {
             logger.warn("Could not find plugin with the id of {}", pluginId);
