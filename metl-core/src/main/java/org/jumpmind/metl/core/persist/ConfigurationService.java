@@ -42,6 +42,7 @@ import org.jumpmind.metl.core.model.AbstractObject;
 import org.jumpmind.metl.core.model.AbstractObjectCreateTimeDescSorter;
 import org.jumpmind.metl.core.model.AbstractObjectNameBasedSorter;
 import org.jumpmind.metl.core.model.Agent;
+import org.jumpmind.metl.core.model.AuditEvent;
 import org.jumpmind.metl.core.model.Component;
 import org.jumpmind.metl.core.model.ComponentAttributeSetting;
 import org.jumpmind.metl.core.model.ComponentEntitySetting;
@@ -71,6 +72,7 @@ import org.jumpmind.metl.core.model.ResourceSetting;
 import org.jumpmind.metl.core.model.Setting;
 import org.jumpmind.metl.core.model.Version;
 import org.jumpmind.metl.core.security.ISecurityService;
+import org.jumpmind.metl.core.util.AppConstants;
 import org.jumpmind.metl.core.util.NameValue;
 import org.jumpmind.persist.IPersistenceManager;
 import org.jumpmind.util.FormatUtils;
@@ -79,13 +81,37 @@ public class ConfigurationService extends AbstractService
         implements IConfigurationService {
     
     protected IOperationsService operationsService;
+    
     protected IDatabasePlatform databasePlatform;
+    
+    private List<IConfigurationChangedListener> configurationChangedListeners = Collections.synchronizedList(new ArrayList<>());
 
     public ConfigurationService(IOperationsService operationsService, ISecurityService securityService, IDatabasePlatform databasePlatform,
             IPersistenceManager persistenceManager, String tablePrefix) {
         super(securityService, persistenceManager, tablePrefix);
         this.operationsService = operationsService;
         this.databasePlatform = databasePlatform;
+    }
+    
+    @Override
+    public void addConfigurationChangeListener(IConfigurationChangedListener listener) {
+        configurationChangedListeners.add(listener);
+    }
+    
+    @Override
+    public void save(AbstractObject data) {
+        super.save(data);
+        for (IConfigurationChangedListener l : configurationChangedListeners) {
+            l.onSave(data);
+        }
+    }
+    
+    @Override
+    public void delete(AbstractObject data) {
+        super.delete(data);
+        for (IConfigurationChangedListener l : configurationChangedListeners) {
+            l.onDelete(data);
+        }
     }
 
     @Override
@@ -153,15 +179,6 @@ public class ConfigurationService extends AbstractService
         params.put("projectVersionId", projectVersionId);
         return find(ResourceName.class, params, Resource.class);
     }
-
-//    @Override
-//    public List<ComponentName> findSharedComponentsInProject(String projectVersionId) {
-//        Map<String, Object> params = new HashMap<String, Object>();
-//        params.put("projectVersionId", projectVersionId);
-//        params.put("deleted", 0);
-//        params.put("shared", 1);
-//        return find(ComponentName.class, params, Component.class);
-//    }
 
     @Override
     public List<ComponentName> findComponentsInProject(String projectVersionId) {
@@ -231,6 +248,35 @@ public class ConfigurationService extends AbstractService
         }
 
         return rootFolders;
+    }
+    
+    @Override
+    public List<ModelName> findModels() {
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("deleted", 0);
+        List<ModelName> objects = find(ModelName.class, params);
+        AbstractObjectNameBasedSorter.sort(objects);
+        return objects;
+    }
+    
+    @Override
+    public List<ResourceName> findResources() {
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("deleted", 0);
+        List<ResourceName> objects = find(ResourceName.class, params);
+        AbstractObjectNameBasedSorter.sort(objects);
+        return objects;
+    }
+    
+    @Override
+    public List<ProjectVersionDependency> findProjectVersionDependencies() {
+        List<ProjectVersionDependency> objects = find(ProjectVersionDependency.class, new HashMap<>(0));
+        AbstractObjectNameBasedSorter.sort(objects);
+        for (ProjectVersionDependency projectVersionDependency : objects) {
+            projectVersionDependency.setTargetProjectVersion(
+                    findProjectVersion(projectVersionDependency.getTargetProjectVersionId()));
+        }
+        return objects;
     }
 
     @Override
@@ -1298,7 +1344,9 @@ public class ConfigurationService extends AbstractService
     
     @Override
     public void updateProjectVersionDependency(ProjectVersionDependency dependency, String newTargetProjectVersionId) {
-        //TODO: audit events
+        save(new AuditEvent(AuditEvent.EventType.CHANGE_DEPENDENCY_VERSION, 
+                String.format("Project Dependency Changed on %s.  Old Dependency Version %s.  New Dependency Version %s",
+                dependency.getName(),dependency.getTargetProjectVersionId(), newTargetProjectVersionId),AppConstants.SYSTEM_USER));
         Map<String, String> oldToNewResourceIdMap = getOldToNewResourceIdMap(dependency, newTargetProjectVersionId);
         Map<String, String> oldToNewModelIdMap = getOldToNewModelIdMap(dependency, newTargetProjectVersionId);
         Map<String, String> oldToNewModelEntityIdMap = getOldToNewModelEntityIdMap(oldToNewModelIdMap);
@@ -1307,13 +1355,17 @@ public class ConfigurationService extends AbstractService
         ISqlTransaction transaction = databasePlatform.getSqlTemplate().startSqlTransaction();
         try {        
             updateProjectVersionWithNewDependencyGUIDs(oldToNewResourceIdMap, oldToNewModelIdMap,
-                    oldToNewModelEntityIdMap, oldToNewModelAttributeIdMap, newTargetProjectVersionId,
+                    oldToNewModelEntityIdMap, oldToNewModelAttributeIdMap, dependency.getProjectVersionId(),
                     transaction);
             updateProjectDependencyWithNewVersion(dependency, newTargetProjectVersionId);
             transaction.commit();
         } catch (Exception e) {
             log.error(String.format("Error updating project version dependencies %s",e.getMessage()));
             transaction.rollback();
+        }
+        
+        for (IConfigurationChangedListener l : configurationChangedListeners) {
+            l.onMultiRowUpdate();
         }
     }
     
@@ -1485,14 +1537,14 @@ public class ConfigurationService extends AbstractService
     
     private void updateProjectVersionWithNewDependencyGUIDs(Map<String,String> oldToNewResourceIdMap, Map<String,String> oldToNewModelIdMap,
                 Map<String,String> oldToNewModelEntityIdMap, Map<String,String> oldToNewModelAttributeIdMap,
-                String targetProjectVersionId, ISqlTransaction transaction) {
+                String sourceProjectVersionId, ISqlTransaction transaction) {
 
-        updateProjectVersionWithNewResources(oldToNewResourceIdMap, targetProjectVersionId, transaction);
+        updateProjectVersionWithNewResources(oldToNewResourceIdMap, sourceProjectVersionId, transaction);
         updateProjectVersionWithNewModels(oldToNewModelIdMap, oldToNewModelEntityIdMap,
-                oldToNewModelAttributeIdMap, targetProjectVersionId, transaction);
+                oldToNewModelAttributeIdMap, sourceProjectVersionId, transaction);
     }
     
-    private void updateProjectVersionWithNewResources(Map<String, String> oldToNewResourceIdMap, String targetProjectVersionId,
+    private void updateProjectVersionWithNewResources(Map<String, String> oldToNewResourceIdMap, String sourceProjectVersionId,
             ISqlTransaction transaction) {
 
         final String UPDATE_RESOURCE_IN_COMPONENT_OLD_TO_NEW = 
@@ -1502,7 +1554,6 @@ public class ConfigurationService extends AbstractService
                 "   set cs.value='%2$s'\n" + 
                 "where \n" + 
                 "   cs.value='%3$s'\n" + 
-                "   and cs.name in ('source.resource','target.resource')\n" + 
                 "   and cs.component_id in \n" + 
                 "   (\n" + 
                 "      select \n" + 
@@ -1513,16 +1564,15 @@ public class ConfigurationService extends AbstractService
                 "         cs.component_id = c.id         \n" + 
                 "         and c.project_version_id='%4$s'\n" + 
                 "   )\n";
-//TODO same comment here as above - look for uuid and then compare against metl_resource              
         for (Map.Entry<String, String> entry : oldToNewResourceIdMap.entrySet()) {
-            transaction.execute(String.format(UPDATE_RESOURCE_IN_COMPONENT_OLD_TO_NEW, tablePrefix, entry.getValue(), entry.getKey(), targetProjectVersionId));    
-            transaction.execute(String.format(UPDATE_RESOURCE_IN_COMPONENT_SETTING_OLD_TO_NEW, tablePrefix, entry.getValue(), entry.getKey(), targetProjectVersionId));                
+            transaction.execute(String.format(UPDATE_RESOURCE_IN_COMPONENT_OLD_TO_NEW, tablePrefix, entry.getValue(), entry.getKey(), sourceProjectVersionId));    
+            transaction.execute(String.format(UPDATE_RESOURCE_IN_COMPONENT_SETTING_OLD_TO_NEW, tablePrefix, entry.getValue(), entry.getKey(), sourceProjectVersionId));                
         }                
     }
     
     private void updateProjectVersionWithNewModels(Map<String, String> oldToNewModelIdMap, 
             Map<String, String> oldToNewModelEntityIdMap, Map<String, String> oldToNewModelAttributeIdMap,
-            String targetProjectVersionId, ISqlTransaction transaction) {
+            String sourceProjectVersionId, ISqlTransaction transaction) {
         
         final String UPDATE_INPUT_MODEL_IN_COMPONENT_OLD_TO_NEW = 
                 "update %1$s_component set input_model_id='%2$s' where input_model_id='%3$s' and project_version_id='%4$s'";
@@ -1530,15 +1580,15 @@ public class ConfigurationService extends AbstractService
                 "update %1$s_component set output_model_id='%2$s' where output_model_id='%3$s' and project_version_id='%4$s'";
               
         for (Map.Entry<String, String> entry : oldToNewModelIdMap.entrySet()) {        
-            transaction.execute(String.format(UPDATE_INPUT_MODEL_IN_COMPONENT_OLD_TO_NEW, tablePrefix, entry.getValue(), entry.getKey(), targetProjectVersionId));
-            transaction.execute(String.format(UPDATE_OUTPUT_MODEL_IN_COMPONENT_OLD_TO_NEW, tablePrefix, entry.getValue(), entry.getKey(), targetProjectVersionId));            
+            transaction.execute(String.format(UPDATE_INPUT_MODEL_IN_COMPONENT_OLD_TO_NEW, tablePrefix, entry.getValue(), entry.getKey(), sourceProjectVersionId));
+            transaction.execute(String.format(UPDATE_OUTPUT_MODEL_IN_COMPONENT_OLD_TO_NEW, tablePrefix, entry.getValue(), entry.getKey(), sourceProjectVersionId));            
         }        
-        updateProjectVersionWithNewModelEntityIds(oldToNewModelEntityIdMap, targetProjectVersionId, transaction);
-        updateProjectVersionWithNewModelAttributeIds(oldToNewModelAttributeIdMap, targetProjectVersionId, transaction);        
+        updateProjectVersionWithNewModelEntityIds(oldToNewModelEntityIdMap, sourceProjectVersionId, transaction);
+        updateProjectVersionWithNewModelAttributeIds(oldToNewModelAttributeIdMap, sourceProjectVersionId, transaction);        
     }
 
     private void updateProjectVersionWithNewModelEntityIds(
-            Map<String, String> oldToNewModelEntityIdMap, String targetProjectVersionId, ISqlTransaction transaction) {
+            Map<String, String> oldToNewModelEntityIdMap, String sourceProjectVersionId, ISqlTransaction transaction) {
 
         final String UPDATE_COMPONENT_ENTITY_SETTING_OLD_TO_NEW = 
                 "update %1$s_component_entity_setting as ces\n" + 
@@ -1558,29 +1608,45 @@ public class ConfigurationService extends AbstractService
      
         for (Map.Entry<String, String> entry : oldToNewModelEntityIdMap.entrySet()) {        
             transaction.execute(String.format(UPDATE_COMPONENT_ENTITY_SETTING_OLD_TO_NEW, tablePrefix, 
-                    entry.getValue(), entry.getKey(), targetProjectVersionId));                    
+                    entry.getValue(), entry.getKey(), sourceProjectVersionId));                    
         }                
     }   
         
     private void updateProjectVersionWithNewModelAttributeIds(
-            Map<String, String> oldToNewModelAttributeIdMap, String targetProjectVersionId, ISqlTransaction transaction) {
+            Map<String, String> oldToNewModelAttributeIdMap, String sourceProjectVersionId, ISqlTransaction transaction) {
 
-        final String UPDATE_COMPONENT_ATTRIBUTE_SETTING_OLD_TO_NEW = 
-                "update %1$s_component_attribute_setting as ces\n" + 
-                "   set ces.attribute_id='%2$s'\n" + 
+        final String UPDATE_COMPONENT_ATTRIBUTE_SETTING_KEY_OLD_TO_NEW = 
+                "update %1$s_component_attribute_setting as cas\n" + 
+                "   set cas.attribute_id='%2$s'\n" + 
                 "where \n" + 
-                "   ces.attribute_id='%3$s'\n" + 
-                "   and ces.component_id in \n" + 
+                "   cas.attribute_id='%3$s'\n" + 
+                "   and cas.component_id in \n" + 
                 "   (\n" + 
                 "      select \n" + 
                 "         c.id\n" + 
                 "      from \n" + 
                 "         %1$s_component c\n" + 
                 "      where \n" + 
-                "         ces.component_id = c.id         \n" + 
+                "         cas.component_id = c.id         \n" + 
                 "         and c.project_version_id='%4$s'\n" + 
                 "   )\n";
 
+        final String UPDATE_COMPONENT_ATTRIBUTE_SETTING_VALUE_OLD_TO_NEW = 
+                "update %1$s_component_attribute_setting as cas\n" + 
+                "   set cas.value='%2$s'\n" + 
+                "where \n" + 
+                "   cas.value='%3$s'\n" + 
+                "   and cas.component_id in \n" + 
+                "   (\n" + 
+                "      select \n" + 
+                "         c.id\n" + 
+                "      from \n" + 
+                "         %1$s_component c\n" + 
+                "      where \n" + 
+                "         cas.component_id = c.id         \n" + 
+                "         and c.project_version_id='%4$s'\n" + 
+                "   )\n";        
+        
         final String UPDATE_MODEL_ATTRIBUTE_IN_COMPONENT_SETTING_OLD_TO_NEW = 
                 "update %1$s_component_setting as cs\n" + 
                 "   set cs.value='%2$s'\n" + 
@@ -1599,10 +1665,12 @@ public class ConfigurationService extends AbstractService
                 "   )\n";
               
         for (Map.Entry<String, String> entry : oldToNewModelAttributeIdMap.entrySet()) {        
-            transaction.execute(String.format(UPDATE_COMPONENT_ATTRIBUTE_SETTING_OLD_TO_NEW, tablePrefix, 
-                    entry.getValue(), entry.getKey(), targetProjectVersionId));
+            transaction.execute(String.format(UPDATE_COMPONENT_ATTRIBUTE_SETTING_KEY_OLD_TO_NEW, tablePrefix, 
+                    entry.getValue(), entry.getKey(), sourceProjectVersionId));
+            transaction.execute(String.format(UPDATE_COMPONENT_ATTRIBUTE_SETTING_VALUE_OLD_TO_NEW, tablePrefix, 
+                    entry.getValue(), entry.getKey(), sourceProjectVersionId));            
             transaction.execute(String.format(UPDATE_MODEL_ATTRIBUTE_IN_COMPONENT_SETTING_OLD_TO_NEW, tablePrefix, 
-                    entry.getValue(), entry.getKey(), targetProjectVersionId));            
+                    entry.getValue(), entry.getKey(), sourceProjectVersionId));            
         }                
     }    
 }

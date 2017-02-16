@@ -84,6 +84,8 @@ import org.jumpmind.metl.core.util.MockJdbcDriver;
 import org.jumpmind.metl.ui.definition.DefinitionPlusUIFactory;
 import org.jumpmind.metl.ui.definition.IDefinitionPlusUIFactory;
 import org.jumpmind.metl.ui.persist.AuditableConfigurationService;
+import org.jumpmind.metl.ui.persist.IUICache;
+import org.jumpmind.metl.ui.persist.UICache;
 import org.jumpmind.persist.IPersistenceManager;
 import org.jumpmind.properties.TypedProperties;
 import org.jumpmind.security.SecurityServiceFactory;
@@ -160,6 +162,8 @@ public class AppConfig extends WebMvcConfigurerAdapter {
     IPluginService pluginService;
 
     IOperationsService operationsService;
+    
+    IUICache uiCache;
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
@@ -488,6 +492,16 @@ public class AppConfig extends WebMvcConfigurerAdapter {
         }
         return securityService;
     }
+    
+    @Bean
+    @Scope(value = "singleton", proxyMode = ScopedProxyMode.INTERFACES)
+    IUICache uiCache() {
+        if (uiCache == null) {
+            uiCache = new UICache(importExportService(), configurationService());
+        }
+        return uiCache;
+    }
+
 
     @Bean
     @Scope(value = "singleton", proxyMode = ScopedProxyMode.INTERFACES)
