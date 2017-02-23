@@ -7,6 +7,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.util.Hashtable;
 
 import javax.jms.BytesMessage;
@@ -51,10 +52,23 @@ abstract public class AbstractJMSJndiDirectory extends AbstractDirectory {
         initialize();
     }
 
-    protected void close(AutoCloseable toClose) {
+    protected void close(Object toClose) {
         if (toClose != null) {
             try {
-                toClose.close();
+                Method method = toClose.getClass().getMethod("close");
+                if (method != null) { 
+                    try {
+                        method.setAccessible(true);
+                        method.invoke(toClose);
+                    } catch (IllegalAccessException e) {
+                        throw e;
+                    }
+                } else {
+                    String msg = String.format("Could not find a close method to call on the class: %s", toClose.getClass().getName());
+                    throw new IllegalAccessException(msg);
+                }
+            } catch (NoSuchMethodError e) {
+                throw e;
             } catch (Exception ex) {
             }
         }
