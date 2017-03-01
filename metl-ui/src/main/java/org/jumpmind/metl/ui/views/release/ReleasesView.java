@@ -57,6 +57,7 @@ import org.springframework.context.annotation.Scope;
 
 import com.vaadin.data.util.BeanItemContainer;
 import com.vaadin.event.ItemClickEvent;
+import com.vaadin.event.SelectionEvent;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
 import com.vaadin.server.FontAwesome;
@@ -116,7 +117,7 @@ public class ReleasesView extends VerticalLayout implements View, IReleasePackag
         grid.setSizeFull();
         grid.setSelectionMode(SelectionMode.MULTI);
         grid.addItemClickListener(e->rowClicked(e));
-        grid.addSelectionListener((e) -> rowSelected());
+        grid.addSelectionListener((e) -> rowSelected(e));
         container = new BeanItemContainer<>(ReleasePackage.class);
         grid.setContainerDataSource(container);
         grid.setColumns("name", "versionLabel", "releaseDate", "released");
@@ -149,6 +150,7 @@ public class ReleasesView extends VerticalLayout implements View, IReleasePackag
     }
 
     protected void refresh() {
+        Collection<Object> selected = grid.getSelectedRows();
         container.removeAllItems();
         List<ReleasePackage> releasePackages = configurationService.findReleasePackages();
         Collections.sort(releasePackages, Collections.reverseOrder(new Comparator<ReleasePackage>() {
@@ -165,6 +167,12 @@ public class ReleasesView extends VerticalLayout implements View, IReleasePackag
             }
         }));
         container.addAll(releasePackages);
+        for (Object s : selected) {
+            grid.select(s);    
+        }                
+        Collection<Object> packages = grid.getSelectedRows();
+        enableDisableButtonsForSelectionSize(packages.size());
+        disableFinalizeIfPackageAlreadyReleased(packages);
     }
 
     protected void add() {
@@ -206,7 +214,6 @@ public class ReleasesView extends VerticalLayout implements View, IReleasePackag
 
     protected void export() {
         // TODO we should let people export an entire list of release packages
-        // vs one
         ReleasePackage releasePackage = getFirstSelectedReleasePackage();
         String export = importExportService.exportReleasePackage(releasePackage.getId(),
                 AppConstants.SYSTEM_USER);
@@ -264,22 +271,21 @@ public class ReleasesView extends VerticalLayout implements View, IReleasePackag
                         }
                     }                                            
                 }
-                
-
+                context.getDefinitionFactory().refresh();
                 refresh();
             }
         }
     }
 
-    protected void rowSelected() {
-        Collection<Object> packages = grid.getSelectedRows();
+    protected void rowSelected(SelectionEvent event) {
+        Collection<Object> packages = event.getSelected();
         enableDisableButtonsForSelectionSize(packages.size());
         disableFinalizeIfPackageAlreadyReleased(packages);
     }
 
     protected void disableFinalizeIfPackageAlreadyReleased(Collection<Object> packages) {
         for (Object pkg : packages) {
-            ReleasePackage releasePackage = (ReleasePackage) pkg;
+            ReleasePackage releasePackage = container.getItem(pkg).getBean();            
             if (releasePackage.isReleased()) {
                 finalizeButton.setEnabled(false);
             }
