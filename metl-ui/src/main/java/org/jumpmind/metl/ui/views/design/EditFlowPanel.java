@@ -74,9 +74,9 @@ import com.vaadin.ui.DragAndDropWrapper;
 import com.vaadin.ui.DragAndDropWrapper.WrapperTargetDetails;
 import com.vaadin.ui.DragAndDropWrapper.WrapperTransferable;
 import com.vaadin.ui.HorizontalLayout;
-import com.vaadin.ui.HorizontalSplitPanel;
 import com.vaadin.ui.Panel;
 import com.vaadin.ui.VerticalLayout;
+import com.vaadin.ui.VerticalSplitPanel;
 import com.vaadin.ui.themes.ValoTheme;
 
 @SuppressWarnings("serial")
@@ -114,7 +114,7 @@ public class EditFlowPanel extends HorizontalLayout implements IUiPanel, IFlowRu
 
     Button settingsButton;
     
-    HorizontalSplitPanel splitPanel;
+    VerticalSplitPanel splitPanel;
 
     List<AbstractObject> selected = new ArrayList<AbstractObject>();
 
@@ -151,7 +151,7 @@ public class EditFlowPanel extends HorizontalLayout implements IUiPanel, IFlowRu
 
         rightLayout.addComponent(buildButtonBar());
 
-        splitPanel = new HorizontalSplitPanel();
+        splitPanel = new VerticalSplitPanel();
         splitPanel.setSizeFull();
         splitPanel.setSplitPosition(MAX_PANEL_POSITION, Unit.PERCENTAGE);
 
@@ -509,9 +509,10 @@ public class EditFlowPanel extends HorizontalLayout implements IUiPanel, IFlowRu
     
     protected void setSelectedNodes(List<AbstractObject> nodes) {
         setPropertiesMinimized(nodes.size()==0);
+        
         if (nodes.size() == 0) {
+            copyButton.setEnabled(false); 
             delButton.setEnabled(false);
-            copyButton.setEnabled(false);            
         } else if (!readOnly) {
             delButton.setEnabled(true);
             copyButton.setEnabled(true);
@@ -519,6 +520,12 @@ public class EditFlowPanel extends HorizontalLayout implements IUiPanel, IFlowRu
         selected = nodes;
         propertySheet.setSource(selected);
         advancedEditButton.setEnabled(hasAdvancedEditor(nodes));
+    }
+    
+    protected void setSelectedLinks(List<AbstractObject> links) {
+        if (links.size() > 0) {
+            delButton.setEnabled(true);
+        }
     }
     
     protected void setSelectedNodeIds(List<String> nodeIds) {
@@ -549,10 +556,8 @@ public class EditFlowPanel extends HorizontalLayout implements IUiPanel, IFlowRu
         @Override
         public void componentEvent(Event e) {
             if (e instanceof NodeSelectedEvent) {
-                NodeSelectedEvent event = (NodeSelectedEvent) e;
-                
+                NodeSelectedEvent event = (NodeSelectedEvent) e;                
                 setSelectedNodeIds(event.getNodeIds());
-                
             } else if (e instanceof NodeDoubleClickedEvent) {
                 openAdvancedEditor();
             } else if (e instanceof NodeMovedEvent) {
@@ -617,6 +622,7 @@ public class EditFlowPanel extends HorizontalLayout implements IUiPanel, IFlowRu
                 LinkSelectedEvent event = (LinkSelectedEvent) e;
                 selected = new ArrayList<AbstractObject>(1);
                 selected.add(flow.findFlowStepLink(event.getSourceNodeId(), event.getTargetNodeId()));
+                setSelectedLinks(selected);
             }
         }
 
