@@ -238,6 +238,7 @@ public class ReleasesView extends VerticalLayout implements View, IReleasePackag
     }
     
     protected void finalizeSelectedReleasePackages() {
+                
         Collection<Object> collection = grid.getSelectedRows();
         Iterator<Object> itr = collection.iterator();
         while (itr.hasNext()) {
@@ -282,8 +283,8 @@ public class ReleasesView extends VerticalLayout implements View, IReleasePackag
                 }
                 context.getDefinitionFactory().refresh();
                 refresh();
-            }
-        }
+            } //if release package not released
+        } //every release package
     }
 
     protected void rowSelected(SelectionEvent event) {
