@@ -239,6 +239,8 @@ public class AgentRuntime {
                 log.info("Stopping the {} resource on the {} agent", resource.getResource().getName(), agent.getName());
                 resource.stop();
             }
+            
+            deployedResources.clear();
 
             log.info("Agent '{}' has been stopped", agent);
         }
@@ -594,12 +596,15 @@ public class AgentRuntime {
             } catch (Exception e) {
                 log.error("Error while waiting for the flow to complete", e);
             } finally {
-                removeFromRunning(deployment.getAgentDeployment(), flowRuntime);
-                AgentProjectVersionFlowDeployment agentProjectVersionFlowDeployment = findDeployed(deployment.getAgentDeployment());
-                if (agentProjectVersionFlowDeployment != null) {
-                    log.info("Scheduled '{}' on '{}' is finished", agentProjectVersionFlowDeployment.getFlow().getName(), agent.getName());
+                if (deployment != null) {
+                    removeFromRunning(deployment.getAgentDeployment(), flowRuntime);
+                    AgentProjectVersionFlowDeployment agentProjectVersionFlowDeployment = findDeployed(deployment.getAgentDeployment());
+                    if (agentProjectVersionFlowDeployment != null) {
+                        log.info("Scheduled '{}' on '{}' is finished", agentProjectVersionFlowDeployment.getFlow().getName(),
+                                agent.getName());
+                    }
                 }
-                executionId = null;
+                executionId = null;                
             }
         }
     }
