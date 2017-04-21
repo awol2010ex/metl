@@ -35,6 +35,7 @@ public class FolderMenuManager extends AbstractDesignSelectedValueMenuManager {
                 "File|New|Resource|Directory|SMB",
                 "File|New|Resource|HTTP",
                 "File|New|Resource|Mail Session",
+                "File|New|Resource|Subscribe|JMS",
                 "File|Import...",        
                 "File|Export...",
                 "File|New|Resource|Directory|UnOffice Kafka Resource","File|New|Resource|UnOffice MongoDB Resource"

@@ -46,6 +46,7 @@ public class ProjectDependencyMenuManager extends AbstractDesignSelectedValueMen
                 "File|New|Resource|Directory|SMB",
                 "File|New|Resource|HTTP",
                 "File|New|Resource|Mail Session",
+                "File|New|Resource|Subscribe|JMS",
                 "Edit|Change Dependency Version",
                 "Edit|Remove",
                 "File|New|Resource|Directory|UnOffice Kafka Resource","File|New|Resource|UnOffice MongoDB Resource"
