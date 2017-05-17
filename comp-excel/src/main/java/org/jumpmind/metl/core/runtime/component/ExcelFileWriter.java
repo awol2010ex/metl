@@ -134,9 +134,13 @@ public class ExcelFileWriter extends AbstractFileWriter {
                 colNbr = 0;
             	includeHeader = false;
             }
-            
-            initStreamAndWriter(inputMessage);
-
+            if(fileOut==null) {
+                try {
+                    initStreamAndWriter(inputMessage);
+                }catch (Exception ee){
+                    log.error("",ee);
+                }
+            }
             if (inputMessage instanceof EntityDataMessage) {
             	ArrayList<EntityData> payload = ((EntityDataMessage)inputMessage).getPayload();
             	for (int i = 0; i < payload.size(); i++) {
