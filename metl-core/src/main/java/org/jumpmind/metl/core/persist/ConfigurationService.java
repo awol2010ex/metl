@@ -1256,7 +1256,7 @@ public class ConfigurationService extends AbstractService
         List<Model> models = new ArrayList<Model>();
         final String MODELS_BY_FLOW_SQL = "select distinct model_id from  "
                 + "(select distinct output_model_id as model_id from %1$s_flow_step fs inner join %1$s_component c on fs.component_id = c.id where fs.flow_id = '%2$s' and output_model_id is not null union "
-                + " select distinct input_model_id as model_id from %1$s_flow_step fs inner join %1$s_component c on fs.component_id = c.id where fs.flow_id = '%2$s' and input_model_id is not null)";
+                + " select distinct input_model_id as model_id from %1$s_flow_step fs inner join %1$s_component c on fs.component_id = c.id where fs.flow_id = '%2$s' and input_model_id is not null) t";
         ISqlTemplate template = databasePlatform.getSqlTemplate();
         List<Row> ids = template.query(String.format(MODELS_BY_FLOW_SQL, tablePrefix, flowId));
         for (Row row : ids) {
@@ -1323,7 +1323,7 @@ public class ConfigurationService extends AbstractService
                 + "   f.deleted=0 and "
                 + "   c.deleted=0 and "
                 + "   (c.input_model_id = '%2$s' "
-                + "   or c.output_model_id = '%2$s')";
+                + "   or c.output_model_id = '%2$s') t";
         ISqlTemplate template = databasePlatform.getSqlTemplate();
         List<Row> ids = template.query(String.format(AFFECTED_FLOWS_BY_MODEL_SQL, tablePrefix, modelId));
         for (Row row : ids) {
