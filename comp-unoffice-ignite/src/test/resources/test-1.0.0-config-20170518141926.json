@@ -1,0 +1,379 @@
+{
+  "versionNumber" : "2.0.5",
+  "hostName" : "WIN-S2JHNNAU5TA",
+  "releasePackageData" : [ {
+    "tableName" : "metl_RELEASE_PACKAGE",
+    "tableData" : { }
+  }, {
+    "tableName" : "metl_RELEASE_PACKAGE_PROJECT_VERSION",
+    "tableData" : { }
+  } ],
+  "projectVersionData" : [ {
+    "projectVersionId" : "908b3339-c7c7-49cf-a22e-d2bfb0beaf45",
+    "projectData" : [ {
+      "tableName" : "metl_PROJECT",
+      "tableData" : {
+        "95024d82-d97a-4580-858a-5d00ce065dd4" : {
+          "id" : "95024d82-d97a-4580-858a-5d00ce065dd4",
+          "name" : "Test",
+          "description" : null,
+          "deleted" : 0,
+          "working_version" : null
+        }
+      }
+    }, {
+      "tableName" : "metl_PROJECT_VERSION",
+      "tableData" : {
+        "908b3339-c7c7-49cf-a22e-d2bfb0beaf45" : {
+          "id" : "908b3339-c7c7-49cf-a22e-d2bfb0beaf45",
+          "version_label" : "1.0.0",
+          "project_id" : "95024d82-d97a-4580-858a-5d00ce065dd4",
+          "orig_version_id" : null,
+          "description" : "",
+          "archived" : 0,
+          "deleted" : 0,
+          "version_type" : null,
+          "release_date" : null
+        }
+      }
+    }, {
+      "tableName" : "metl_PROJECT_VERSION_DEFINITION_PLUGIN",
+      "tableData" : {
+        "908b3339-c7c7-49cf-a22e-d2bfb0beaf45null" : {
+          "project_version_id" : "908b3339-c7c7-49cf-a22e-d2bfb0beaf45",
+          "definition_type" : "Component",
+          "definition_type_id" : "Zip",
+          "definition_name" : "Zip",
+          "artifact_name" : "comp-zip",
+          "artifact_group" : "org.jumpmind.metl",
+          "artifact_version" : "1.0.0.dev201612161054",
+          "latest_artifact_version" : "1.0.0.dev201612161054",
+          "enabled" : 1,
+          "pin_version" : 0
+        }
+      }
+    }, {
+      "tableName" : "metl_PROJECT_VERSION_DEPENDENCY",
+      "tableData" : {
+        "12672897-4de7-428a-82b3-a7726a1289b6" : {
+          "id" : "12672897-4de7-428a-82b3-a7726a1289b6",
+          "row_id" : "83d8dde1-e170-4df7-9662-2d57fc315acc",
+          "project_version_id" : "908b3339-c7c7-49cf-a22e-d2bfb0beaf45",
+          "target_project_version_id" : "f55241fd-9564-4f6a-bd0d-95a50a729000"
+        }
+      }
+    } ],
+    "resourceData" : [ {
+      "tableName" : "metl_RESOURCE",
+      "tableData" : {
+        "511a51a7-6d62-4360-a686-80ca3c200dc0" : {
+          "id" : "511a51a7-6d62-4360-a686-80ca3c200dc0",
+          "row_id" : "d5446d82-1c1e-40f9-9330-3f5ff057d9ba",
+          "project_version_id" : "908b3339-c7c7-49cf-a22e-d2bfb0beaf45",
+          "deleted" : 0,
+          "name" : "UnOffice Ignite Cache",
+          "type" : "UnofficeIgniteCache",
+          "folder_id" : null
+        },
+        "d5f6b9f3-a2a5-40a1-8583-115619a935a1" : {
+          "id" : "d5f6b9f3-a2a5-40a1-8583-115619a935a1",
+          "row_id" : "70460eb6-3ecb-44a1-8dc3-387eeef79654",
+          "project_version_id" : "908b3339-c7c7-49cf-a22e-d2bfb0beaf45",
+          "deleted" : 0,
+          "name" : "OATESTDB",
+          "type" : "Database",
+          "folder_id" : null
+        }
+      }
+    }, {
+      "tableName" : "metl_RESOURCE_SETTING",
+      "tableData" : {
+        "511a51a7-6d62-4360-a686-80ca3c200dc0cache.name" : {
+          "resource_id" : "511a51a7-6d62-4360-a686-80ca3c200dc0",
+          "name" : "cache.name",
+          "value" : "personCache"
+        },
+        "511a51a7-6d62-4360-a686-80ca3c200dc0ip.address" : {
+          "resource_id" : "511a51a7-6d62-4360-a686-80ca3c200dc0",
+          "name" : "ip.address",
+          "value" : "127.0.0.1:47500..47509"
+        },
+        "d5f6b9f3-a2a5-40a1-8583-115619a935a1db.user" : {
+          "resource_id" : "d5f6b9f3-a2a5-40a1-8583-115619a935a1",
+          "name" : "db.user",
+          "value" : "oa"
+        },
+        "d5f6b9f3-a2a5-40a1-8583-115619a935a1db.driver" : {
+          "resource_id" : "d5f6b9f3-a2a5-40a1-8583-115619a935a1",
+          "name" : "db.driver",
+          "value" : "com.ibm.db2.jcc.DB2Driver"
+        },
+        "d5f6b9f3-a2a5-40a1-8583-115619a935a1db.url" : {
+          "resource_id" : "d5f6b9f3-a2a5-40a1-8583-115619a935a1",
+          "name" : "db.url",
+          "value" : "jdbc:db2://10.251.68.109:50000/OATEST"
+        },
+        "d5f6b9f3-a2a5-40a1-8583-115619a935a1db.password" : {
+          "resource_id" : "d5f6b9f3-a2a5-40a1-8583-115619a935a1",
+          "name" : "db.password",
+          "value" : "enc:+3sER2zEyWU=",
+          "VALUE" : "oa"
+        },
+        "d5f6b9f3-a2a5-40a1-8583-115619a935a1show.on.explore.screen" : {
+          "resource_id" : "d5f6b9f3-a2a5-40a1-8583-115619a935a1",
+          "name" : "show.on.explore.screen",
+          "value" : "true"
+        }
+      }
+    } ],
+    "modelData" : [ {
+      "tableName" : "metl_MODEL",
+      "tableData" : {
+        "ff19d6c7-7158-4c8d-a551-f5a070c87f20" : {
+          "id" : "ff19d6c7-7158-4c8d-a551-f5a070c87f20",
+          "row_id" : "d1139d9c-d66b-498a-90c3-e98adb2c0928",
+          "project_version_id" : "908b3339-c7c7-49cf-a22e-d2bfb0beaf45",
+          "deleted" : 0,
+          "name" : "WF_STAFF",
+          "shared" : 0,
+          "folder_id" : null
+        },
+        "aacc0cba-7318-4ea6-a09e-5328c9718b64" : {
+          "id" : "aacc0cba-7318-4ea6-a09e-5328c9718b64",
+          "row_id" : "41ee13a8-2ee3-423d-b84a-502cad38aa14",
+          "project_version_id" : "908b3339-c7c7-49cf-a22e-d2bfb0beaf45",
+          "deleted" : 0,
+          "name" : "Person",
+          "shared" : 0,
+          "folder_id" : null
+        }
+      }
+    }, {
+      "tableName" : "metl_MODEL_ENTITY",
+      "tableData" : {
+        "20f93107-5163-4c20-81a6-0cb76e3eeded" : {
+          "id" : "20f93107-5163-4c20-81a6-0cb76e3eeded",
+          "model_id" : "ff19d6c7-7158-4c8d-a551-f5a070c87f20",
+          "name" : "WF_STAFF",
+          "description" : null
+        },
+        "41489fc6-b853-4fc7-9f4a-fb497273c76f" : {
+          "id" : "41489fc6-b853-4fc7-9f4a-fb497273c76f",
+          "model_id" : "aacc0cba-7318-4ea6-a09e-5328c9718b64",
+          "name" : "Person",
+          "description" : null
+        }
+      }
+    }, {
+      "tableName" : "metl_MODEL_ATTRIBUTE",
+      "tableData" : {
+        "27e0a28a-4fe2-47ba-8d1a-3d944f071514" : {
+          "id" : "27e0a28a-4fe2-47ba-8d1a-3d944f071514",
+          "entity_id" : "20f93107-5163-4c20-81a6-0cb76e3eeded",
+          "attribute_order" : 2,
+          "name" : "LASTMODIFIEDTIME",
+          "description" : "最后修改时间",
+          "type" : "VARCHAR",
+          "type_entity_id" : null,
+          "pk" : 0
+        },
+        "80745e04-0682-4454-a4ce-860ea179f579" : {
+          "id" : "80745e04-0682-4454-a4ce-860ea179f579",
+          "entity_id" : "20f93107-5163-4c20-81a6-0cb76e3eeded",
+          "attribute_order" : 1,
+          "name" : "STAFFNAME",
+          "description" : "人员名称",
+          "type" : "VARCHAR",
+          "type_entity_id" : null,
+          "pk" : 0
+        },
+        "a748bc27-3c9a-4929-9f30-5d649e759ad0" : {
+          "id" : "a748bc27-3c9a-4929-9f30-5d649e759ad0",
+          "entity_id" : "41489fc6-b853-4fc7-9f4a-fb497273c76f",
+          "attribute_order" : 0,
+          "name" : "id",
+          "description" : null,
+          "type" : "VARCHAR",
+          "type_entity_id" : null,
+          "pk" : 1
+        },
+        "6980c1cf-aef3-42c2-be02-a9ea69d21e0a" : {
+          "id" : "6980c1cf-aef3-42c2-be02-a9ea69d21e0a",
+          "entity_id" : "20f93107-5163-4c20-81a6-0cb76e3eeded",
+          "attribute_order" : 0,
+          "name" : "STAFFID",
+          "description" : "人员ID",
+          "type" : "VARCHAR",
+          "type_entity_id" : null,
+          "pk" : 1
+        },
+        "19bb7e3a-b50a-4901-b27a-3e4d5cf7dfdb" : {
+          "id" : "19bb7e3a-b50a-4901-b27a-3e4d5cf7dfdb",
+          "entity_id" : "41489fc6-b853-4fc7-9f4a-fb497273c76f",
+          "attribute_order" : 1,
+          "name" : "firstName",
+          "description" : null,
+          "type" : "VARCHAR",
+          "type_entity_id" : null,
+          "pk" : 0
+        },
+        "329fec2c-217d-4d24-97c3-d326d4211678" : {
+          "id" : "329fec2c-217d-4d24-97c3-d326d4211678",
+          "entity_id" : "41489fc6-b853-4fc7-9f4a-fb497273c76f",
+          "attribute_order" : 2,
+          "name" : "lastName",
+          "description" : null,
+          "type" : "VARCHAR",
+          "type_entity_id" : null,
+          "pk" : 0
+        }
+      }
+    } ],
+    "flowData" : [ {
+      "tableName" : "metl_COMPONENT",
+      "tableData" : {
+        "07000f83-9f8b-44ff-a7ba-f585c397c05a" : {
+          "id" : "07000f83-9f8b-44ff-a7ba-f585c397c05a",
+          "row_id" : "c8f1591e-8589-4b3c-8cf2-f1c282a004b6",
+          "project_version_id" : "908b3339-c7c7-49cf-a22e-d2bfb0beaf45",
+          "deleted" : 0,
+          "name" : "Unoffice Ignite SQL Writer 1",
+          "type" : "Unoffice Ignite SQL Writer",
+          "folder_id" : null,
+          "shared" : 0,
+          "input_model_id" : "aacc0cba-7318-4ea6-a09e-5328c9718b64",
+          "output_model_id" : null,
+          "resource_id" : "511a51a7-6d62-4360-a686-80ca3c200dc0"
+        },
+        "1e68403d-c931-4884-ab04-f9dec16f23bb" : {
+          "id" : "1e68403d-c931-4884-ab04-f9dec16f23bb",
+          "row_id" : "16f66434-71ea-455e-b4ba-0dcd0e301800",
+          "project_version_id" : "908b3339-c7c7-49cf-a22e-d2bfb0beaf45",
+          "deleted" : 0,
+          "name" : "RDBMS Reader 1",
+          "type" : "RDBMS Reader",
+          "folder_id" : null,
+          "shared" : 0,
+          "input_model_id" : null,
+          "output_model_id" : "ff19d6c7-7158-4c8d-a551-f5a070c87f20",
+          "resource_id" : "d5f6b9f3-a2a5-40a1-8583-115619a935a1"
+        },
+        "98f1e6db-d35c-425c-ba36-b45dc7f2c4b4" : {
+          "id" : "98f1e6db-d35c-425c-ba36-b45dc7f2c4b4",
+          "row_id" : "c1d7fa0f-8045-4713-b08f-8e9b222c32c2",
+          "project_version_id" : "908b3339-c7c7-49cf-a22e-d2bfb0beaf45",
+          "deleted" : 0,
+          "name" : "Mapping 1",
+          "type" : "Mapping",
+          "folder_id" : null,
+          "shared" : 0,
+          "input_model_id" : "ff19d6c7-7158-4c8d-a551-f5a070c87f20",
+          "output_model_id" : "aacc0cba-7318-4ea6-a09e-5328c9718b64",
+          "resource_id" : null
+        }
+      }
+    }, {
+      "tableName" : "metl_COMPONENT_SETTING",
+      "tableData" : {
+        "18f8e3af-ae71-4e34-ab63-c5c80062ae20" : {
+          "id" : "18f8e3af-ae71-4e34-ab63-c5c80062ae20",
+          "component_id" : "1e68403d-c931-4884-ab04-f9dec16f23bb",
+          "name" : "sql",
+          "value" : "select * from wf_staff"
+        },
+        "6425dfd8-57c9-4742-b351-64bf4e8b8a34" : {
+          "id" : "6425dfd8-57c9-4742-b351-64bf4e8b8a34",
+          "component_id" : "07000f83-9f8b-44ff-a7ba-f585c397c05a",
+          "name" : "control.message.on.text.send",
+          "value" : "true"
+        }
+      }
+    }, {
+      "tableName" : "metl_COMPONENT_ENTITY_SETTING",
+      "tableData" : { }
+    }, {
+      "tableName" : "metl_COMPONENT_ATTRIBUTE_SETTING",
+      "tableData" : {
+        "5df35565-9435-4a5c-8943-0ab47a5f0229" : {
+          "id" : "5df35565-9435-4a5c-8943-0ab47a5f0229",
+          "component_id" : "98f1e6db-d35c-425c-ba36-b45dc7f2c4b4",
+          "attribute_id" : "80745e04-0682-4454-a4ce-860ea179f579",
+          "name" : "mapping.processor.attribute.maps.to",
+          "value" : "329fec2c-217d-4d24-97c3-d326d4211678"
+        },
+        "fb51e085-9454-4f62-a693-4f5a553c0da4" : {
+          "id" : "fb51e085-9454-4f62-a693-4f5a553c0da4",
+          "component_id" : "98f1e6db-d35c-425c-ba36-b45dc7f2c4b4",
+          "attribute_id" : "6980c1cf-aef3-42c2-be02-a9ea69d21e0a",
+          "name" : "mapping.processor.attribute.maps.to",
+          "value" : "a748bc27-3c9a-4929-9f30-5d649e759ad0"
+        },
+        "46ff1d26-a634-41da-9c56-d3eb342aa302" : {
+          "id" : "46ff1d26-a634-41da-9c56-d3eb342aa302",
+          "component_id" : "98f1e6db-d35c-425c-ba36-b45dc7f2c4b4",
+          "attribute_id" : "80745e04-0682-4454-a4ce-860ea179f579",
+          "name" : "mapping.processor.attribute.maps.to",
+          "value" : "19bb7e3a-b50a-4901-b27a-3e4d5cf7dfdb"
+        }
+      }
+    }, {
+      "tableName" : "metl_FLOW",
+      "tableData" : {
+        "156ddd5e-8ea0-43a3-b1c7-6eba351e7400" : {
+          "id" : "156ddd5e-8ea0-43a3-b1c7-6eba351e7400",
+          "row_id" : "7b07ca78-aedd-439b-b7f9-bd0808ff865c",
+          "project_version_id" : "908b3339-c7c7-49cf-a22e-d2bfb0beaf45",
+          "deleted" : 0,
+          "test" : 0,
+          "web_service" : 0,
+          "name" : "Test Ignite",
+          "notes" : null,
+          "folder_id" : null
+        }
+      }
+    }, {
+      "tableName" : "metl_FLOW_PARAMETER",
+      "tableData" : { }
+    }, {
+      "tableName" : "metl_FLOW_STEP",
+      "tableData" : {
+        "9b267432-ee0a-421a-b4f2-36dc68cbedee" : {
+          "id" : "9b267432-ee0a-421a-b4f2-36dc68cbedee",
+          "flow_id" : "156ddd5e-8ea0-43a3-b1c7-6eba351e7400",
+          "component_id" : "98f1e6db-d35c-425c-ba36-b45dc7f2c4b4",
+          "x" : 430,
+          "y" : 150,
+          "approximate_order" : 2
+        },
+        "cdb5f897-91ab-4653-ba55-05dfb7a983d1" : {
+          "id" : "cdb5f897-91ab-4653-ba55-05dfb7a983d1",
+          "flow_id" : "156ddd5e-8ea0-43a3-b1c7-6eba351e7400",
+          "component_id" : "1e68403d-c931-4884-ab04-f9dec16f23bb",
+          "x" : 197,
+          "y" : 140,
+          "approximate_order" : 1
+        },
+        "ca9a5153-2871-41cb-b907-80d7752f3a7e" : {
+          "id" : "ca9a5153-2871-41cb-b907-80d7752f3a7e",
+          "flow_id" : "156ddd5e-8ea0-43a3-b1c7-6eba351e7400",
+          "component_id" : "07000f83-9f8b-44ff-a7ba-f585c397c05a",
+          "x" : 770,
+          "y" : 130,
+          "approximate_order" : 0
+        }
+      }
+    }, {
+      "tableName" : "metl_FLOW_STEP_LINK",
+      "tableData" : {
+        "cdb5f897-91ab-4653-ba55-05dfb7a983d19b267432-ee0a-421a-b4f2-36dc68cbedee" : {
+          "source_step_id" : "cdb5f897-91ab-4653-ba55-05dfb7a983d1",
+          "target_step_id" : "9b267432-ee0a-421a-b4f2-36dc68cbedee"
+        },
+        "9b267432-ee0a-421a-b4f2-36dc68cbedeeca9a5153-2871-41cb-b907-80d7752f3a7e" : {
+          "source_step_id" : "9b267432-ee0a-421a-b4f2-36dc68cbedee",
+          "target_step_id" : "ca9a5153-2871-41cb-b907-80d7752f3a7e"
+        }
+      }
+    } ]
+  } ]
+}
