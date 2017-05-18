@@ -61,6 +61,8 @@ public class DesignMenuBar extends AbstractMenuBar {
 
         add("File|New|Resource|Directory|UnOffice Kafka Resource");
         add("File|New|Resource|UnOffice MongoDB Resource");
+        add("File|New|Resource|UnOffice MongoDB Resource");
+        add("File|New|Resource|UnOffice Ignite Cache");
     }
 
     static class NothingSelectAction extends AbstractDesignSelectedValueMenuManager {

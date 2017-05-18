@@ -38,7 +38,9 @@ public class FolderMenuManager extends AbstractDesignSelectedValueMenuManager {
                 "File|New|Resource|Subscribe|JMS",
                 "File|Import...",        
                 "File|Export...",
-                "File|New|Resource|Directory|UnOffice Kafka Resource","File|New|Resource|UnOffice MongoDB Resource"
+                "File|New|Resource|Directory|UnOffice Kafka Resource",
+                "File|New|Resource|UnOffice MongoDB Resource",
+                "File|New|Resource|UnOffice Ignite Cache"
         });
 
         if (navigator.getContext().getClipboard()

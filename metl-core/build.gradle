@@ -81,6 +81,9 @@ dependencies {
 	}
     compile 'org.hprose:hprose-java:2.0.30'
 
+    compile "org.apache.ignite:ignite-core:$IgniteVersion"
+    compile "org.apache.ignite:ignite-spring:$IgniteVersion"
+    compile "org.apache.ignite:ignite-indexing:$IgniteVersion"
 }
 
 clean.doFirst {

@@ -1,0 +1,86 @@
+<!--
+
+    Licensed to JumpMind Inc under one or more contributor
+    license agreements.  See the NOTICE file distributed
+    with this work for additional information regarding
+    copyright ownership.  JumpMind Inc licenses this file
+    to you under the GNU General Public License, version 3.0 (GPLv3)
+    (the "License"); you may not use this file except in compliance
+    with the License.
+
+    You should have received a copy of the GNU General Public License,
+    version 3.0 (GPLv3) along with this library; if not, see
+    <http://www.gnu.org/licenses/>.
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<definitions>
+  <component category='WRITER'
+             id='Unoffice Ignite SQL Writer'
+             inputMessageType='entity'
+             inputOutputModelsMatch='false'
+             outputMessageType='text'
+             resourceCategory='UnofficeIgniteCache'
+             supportsMultipleThreads='true'>
+    <name>Unoffice Ignite SQL Writer</name>
+    <className>org.jumpmind.metl.ignite.runtime.UnofficeIgniteSQLWriter</className>
+    <keywords>database,db,dml,insert,update,delete,crud</keywords>
+    <description></description>
+    <settings>
+      <setting id='control.message.on.text.send'
+               required='false'
+               type='boolean'>
+        <name>Send Control Message on Text Send</name>
+        <defaultValue>false</defaultValue>
+      </setting>
+
+      <setting id='run.when'
+               required='false'
+               type='choice'>
+        <name>Run When</name>
+        <defaultValue>PER UNIT OF WORK</defaultValue>
+        <choices>
+          <choice>PER UNIT OF WORK</choice>
+          <choice>PER MESSAGE</choice>
+        </choices>
+      </setting>
+
+      <setting id='rows.per.message'
+               required='false'
+               type='integer'>
+        <name>Rows/Msg</name>
+        <defaultValue>1000</defaultValue>
+      </setting>
+    </settings>
+  </component>
+
+
+
+
+
+
+  <resource id='UnofficeIgniteCache' resourceCategory='UnofficeIgniteCache'>
+    <name>UnOffice MongoDB</name>
+    <className>org.jumpmind.metl.ignite.resource.UnofficeIgniteCache</className>
+    <settings>
+      <setting id='cache.name'
+               required='true'
+               type='text'>
+        <name>Cache Name</name>
+      </setting>
+      <setting id='ip.address'
+               required='true'
+               type='text'>
+        <name>Ip addresses for Finder (split by ';')</name>
+      </setting>
+
+
+    </settings>
+  </resource>
+</definitions>

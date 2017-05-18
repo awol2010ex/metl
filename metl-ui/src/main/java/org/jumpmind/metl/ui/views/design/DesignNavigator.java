@@ -907,6 +907,10 @@ public class DesignNavigator extends VerticalLayout {
         addNewResource("UnOfficeMongoDB", "UnOffice MongoDB", Icons.DATABASE);
     }
 
+    public void addNewUnOfficeIgniteCache() {
+        addNewResource("UnofficeIgniteCache", "UnOffice Ignite Cache", Icons.DATABASE);
+    }
+
     public void addNewSMBFileSystem() {
         addNewResource("SMB", "SMB Directory", Icons.FILE_SYSTEM);
     }

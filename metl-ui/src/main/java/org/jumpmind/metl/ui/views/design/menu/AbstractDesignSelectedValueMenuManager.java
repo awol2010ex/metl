@@ -59,6 +59,9 @@ abstract public class AbstractDesignSelectedValueMenuManager extends AbstractSel
             } else if ("File|New|Resource|UnOffice MongoDB Resource".equals(menuSelected)) {
                 navigator.addNewUnOfficeMongoDBResource();
                 return true;
+            } else if ("File|New|Resource|UnOffice Ignite Cache".equals(menuSelected)) {
+                navigator.addNewUnOfficeIgniteCache();
+                return true;
             } else if ("File|New|Resource|Directory|SFTP".equals(menuSelected)) {
                 navigator.addNewSftpFileSystem();
                 return true;

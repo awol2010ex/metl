@@ -49,7 +49,9 @@ public class ProjectDependencyMenuManager extends AbstractDesignSelectedValueMen
                 "File|New|Resource|Subscribe|JMS",
                 "Edit|Change Dependency Version",
                 "Edit|Remove",
-                "File|New|Resource|Directory|UnOffice Kafka Resource","File|New|Resource|UnOffice MongoDB Resource"
+                "File|New|Resource|Directory|UnOffice Kafka Resource",
+                "File|New|Resource|UnOffice MongoDB Resource",
+                "File|New|Resource|UnOffice Ignite Cache"
         });
     }
 }

@@ -43,4 +43,6 @@ include 'metl-war-noplugins'
 include 'comp-unoffice-hprose'
 include 'comp-unoffice-mongodb'
 
+include  'comp-unoffice-ignite'
+
 

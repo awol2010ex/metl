@@ -76,6 +76,7 @@ dependencies {
     compile project(":comp-unoffice-kafka")
     compile project(":comp-unoffice-hprose")
     compile project(":comp-unoffice-mongodb")
+    compile project(":comp-unoffice-ignite")
 }
 
 gretty {
