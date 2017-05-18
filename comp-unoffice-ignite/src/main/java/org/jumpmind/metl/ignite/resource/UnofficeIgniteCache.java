@@ -23,6 +23,7 @@ package org.jumpmind.metl.ignite.resource;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.Ignition;
 import org.apache.ignite.configuration.IgniteConfiguration;
+import org.apache.ignite.spi.communication.tcp.TcpCommunicationSpi;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.multicast.TcpDiscoveryMulticastIpFinder;
 import org.jumpmind.metl.core.runtime.resource.AbstractResourceRuntime;
@@ -41,7 +42,7 @@ public class UnofficeIgniteCache extends AbstractResourceRuntime {
 
     private String ipAddress =null ;
     private String cacheName =null;
-
+    private IgniteConfiguration cfg =null;
     @Override
     protected void start(TypedProperties properties) {
 
@@ -52,7 +53,7 @@ public class UnofficeIgniteCache extends AbstractResourceRuntime {
 
         if(igniteClient==null) {
             Ignition.setClientMode(true);
-            IgniteConfiguration cfg = new IgniteConfiguration();
+            cfg = new IgniteConfiguration();
 
             ipAddress = properties.get(IP_ADDRESS ,"");
             cacheName =properties.get(CACHE_NAME ,"");
@@ -61,8 +62,13 @@ public class UnofficeIgniteCache extends AbstractResourceRuntime {
             TcpDiscoverySpi tcpDiscoverySpi = new TcpDiscoverySpi();
             tcpDiscoverySpi.setIpFinder(ipFinder);
             cfg.setDiscoverySpi(tcpDiscoverySpi);
+            tcpDiscoverySpi.setClientReconnectDisabled(true);
 
-            igniteClient = Ignition.start(cfg);
+            // Configure Ignite here.
+            TcpCommunicationSpi commSpi = new TcpCommunicationSpi();
+            commSpi.setSlowClientQueueLimit(1000);
+            cfg.setCommunicationSpi(commSpi);
+
         }
     }
 
@@ -76,6 +82,10 @@ public class UnofficeIgniteCache extends AbstractResourceRuntime {
     @SuppressWarnings("unchecked")
     @Override
     public <T> T reference() {
+        if(igniteClient==null){
+            Ignition.setClientMode(true);
+            igniteClient =Ignition.getOrStart(cfg);
+        }
         return (T) igniteClient;
     }
 
