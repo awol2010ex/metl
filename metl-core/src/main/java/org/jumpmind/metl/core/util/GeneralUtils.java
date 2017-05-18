@@ -2,6 +2,10 @@ package org.jumpmind.metl.core.util;
 
 import org.jumpmind.db.model.Column;
 import org.jumpmind.db.model.Table;
+import org.jumpmind.util.LinkedCaseInsensitiveMap;
+
+import java.util.ArrayList;
+import java.util.Iterator;
 
 final public class GeneralUtils {
 
@@ -21,6 +25,18 @@ final public class GeneralUtils {
             for(Column c :columns){
                 c.setName(c.getName().toUpperCase());
             }
+        }
+    }
+
+    public static void columnNameToUpperCase(LinkedCaseInsensitiveMap<Object> row){
+        Iterator<java.util.Map.Entry<String, Object>> it=row.entrySet().iterator();
+        ArrayList<String > keys =new ArrayList<String >();
+        while(it.hasNext()){
+                 keys.add(it.next().getKey());
+        }
+        for(String key :keys){
+                 row.put(key.toUpperCase() ,row.get(key) );
+
         }
     }
 }

@@ -596,7 +596,10 @@ public class ImportExportService extends AbstractService implements IImportExpor
             while (itr.hasNext()) {
                 String key = itr.next();
                 LinkedCaseInsensitiveMap<Object> row = inserts.getTableData().get(key);
+                GeneralUtils.columnNameToUpperCase(row);
                 Date createTime = new Date();
+
+
                 row.put("CREATE_TIME", createTime);
                 row.put("LAST_UPDATE_TIME", createTime);
                 useDefaultsForMissingRequiredColumns(table, row);                
@@ -622,6 +625,9 @@ public class ImportExportService extends AbstractService implements IImportExpor
             while (itr.hasNext()) {
                 String key = itr.next();
                 LinkedCaseInsensitiveMap<Object> row = updates.getTableData().get(key);
+
+                GeneralUtils.columnNameToUpperCase(row);
+
                 row.put("LAST_UPDATE_TIME", new Date());
                 useDefaultsForMissingRequiredColumns(table, row);                
                 transaction.prepareAndExecute(stmt.getSql(), row);
@@ -653,6 +659,7 @@ public class ImportExportService extends AbstractService implements IImportExpor
             while (itr.hasNext()) {
                 String key = itr.next();
                 LinkedCaseInsensitiveMap<Object> row = deletes.getTableData().get(key);
+                GeneralUtils.columnNameToUpperCase(row);
                 transaction.prepareAndExecute(stmt.getSql(), row);
             }            
         }
