@@ -86,6 +86,14 @@ public class UnofficeIgniteCache extends AbstractResourceRuntime {
             Ignition.setClientMode(true);
             igniteClient =Ignition.getOrStart(cfg);
         }
+        else{
+            if(!igniteClient.active()){
+                igniteClient.close();
+                igniteClient=null;
+                Ignition.setClientMode(true);
+                igniteClient =Ignition.getOrStart(cfg);
+            }
+        }
         return (T) igniteClient;
     }
 

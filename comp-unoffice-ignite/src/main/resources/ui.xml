@@ -26,4 +26,7 @@
     <component-ui id="Unoffice Ignite SQL Writer UI" componentId="Unoffice Ignite SQL Writer">
         <iconImage>/unoffice/comp/ignite/metl-unoffice-ignite-48x48-color.png</iconImage>
     </component-ui>
+    <component-ui id="Unoffice Ignite SQL Executor UI" componentId="Unoffice Ignite SQL Executor">
+        <iconImage>/unoffice/comp/ignite/metl-unoffice-ignite-48x48-color.png</iconImage>
+    </component-ui>
 </ui>

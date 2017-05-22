@@ -83,4 +83,43 @@
 
     </settings>
   </resource>
+
+
+
+  <component category='WRITER'
+             id='Unoffice Ignite SQL Executor'
+             showInputModel='true'
+             inputMessageType='any'
+             inputOutputModelsMatch='true'
+             outputMessageType='text'
+             resourceCategory='UnofficeIgniteCache'>
+    <name>Unoffice Ignite SQL Executor</name>
+    <className>org.jumpmind.metl.ignite.runtime.UnofficeIgniteSQLExecutor</className>
+    <keywords>database,db,sql</keywords>
+    <description></description>
+    <extraUnitOfWorkOptions>
+      <extraUnitOfWorkOption>SQL Statement</extraUnitOfWorkOption>
+    </extraUnitOfWorkOptions>
+    <settings>
+      <setting id='run.when'
+               required='false'
+               type='choice'>
+        <name>Run When</name>
+        <defaultValue>PER MESSAGE</defaultValue>
+        <choices>
+          <choice>PER UNIT OF WORK</choice>
+          <choice>PER MESSAGE</choice>
+          <choice>PER ENTITY</choice>
+        </choices>
+      </setting>
+      <setting id='sql.file'
+               type='text'>
+        <name>File</name>
+      </setting>
+      <setting id='sql'
+               type='multiline_text'>
+        <name>Sql</name>
+      </setting>
+    </settings>
+  </component>
 </definitions>
