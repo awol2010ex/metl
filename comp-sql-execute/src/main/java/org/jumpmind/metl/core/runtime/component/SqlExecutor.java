@@ -96,7 +96,7 @@ public class SqlExecutor extends AbstractRdbmsComponentRuntime {
     
     @Override
     public boolean supportsStartupMessages() {
-        return false;
+        return true;
     }
 
     @Override
