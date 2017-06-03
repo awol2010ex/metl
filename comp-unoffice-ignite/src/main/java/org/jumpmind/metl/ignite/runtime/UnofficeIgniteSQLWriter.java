@@ -2,6 +2,7 @@ package org.jumpmind.metl.ignite.runtime;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.ignite.Ignite;
+import org.apache.ignite.IgniteAtomicSequence;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.cache.query.SqlFieldsQuery;
 import org.jumpmind.metl.core.model.Model;
@@ -75,9 +76,17 @@ public class UnofficeIgniteSQLWriter extends AbstractComponentRuntime {
         insertSQL.append("(");
 
         List<String> el =new ArrayList();
+        boolean hasPk =false;
         for (ModelAttribute ma : inputModelAttributeList) {
             el.add(ma.getName());
+            if(ma.isPk()){
+                hasPk =true;
+            }
         }
+        if(!hasPk){
+            el.add("_key");
+        }
+
         insertSQL.append(StringUtils.join(el,","));
         insertSQL.append(") values (");
 
@@ -85,28 +94,35 @@ public class UnofficeIgniteSQLWriter extends AbstractComponentRuntime {
         for (ModelAttribute ma : inputModelAttributeList) {
             vl.add("?");
         }
+        if(!hasPk){
+            vl.add("?");
+        }
         insertSQL.append(StringUtils.join(vl,","));
         insertSQL.append(")");
 
-        igniteClient=(Ignite)this.getResourceReference();
-
-        unofficeIgniteCache =(UnofficeIgniteCache)this.getResourceRuntime();
-        
-        cacheObject =igniteClient.getOrCreateCache(unofficeIgniteCache.getCacheName());
+        this.initIgniteClient();
     }
 
     @Override
     public boolean supportsStartupMessages() {
         return false;
     }
-
+    //init client
+    private void initIgniteClient(){
+        igniteClient=(Ignite)this.getResourceReference();
+        unofficeIgniteCache =(UnofficeIgniteCache)this.getResourceRuntime();
+        cacheObject =igniteClient.getOrCreateCache(unofficeIgniteCache.getCacheName());
+    }
     @Override
     public void handle(Message inputMessage, ISendMessageCallback callback, boolean unitOfWorkBoundaryReached) {
         if (inputMessage instanceof EntityDataMessage) {
             ArrayList<EntityData> inputRows = ((EntityDataMessage) inputMessage).getPayload();
             if (inputRows != null && inputRows.size() > 0) {
 
-
+                IgniteAtomicSequence seq = igniteClient.atomicSequence("seqName",//序列名
+                        0, //初始值
+                        true//如果序列不存在则创建
+                );
                 try {
 
 
@@ -116,9 +132,20 @@ public class UnofficeIgniteSQLWriter extends AbstractComponentRuntime {
                                 continue;
                             }
                             ArrayList<Object> args = new ArrayList<Object>();
+
+                            boolean hasPk =false;
+
                             for (ModelAttribute ma : inputModelAttributeList) {
                                 args.add( row.get(ma.getId()));
+                                if(ma.isPk()){
+                                    hasPk =true;
+                                }
                             }
+                            if(!hasPk){
+                                args.add(seq.incrementAndGet());
+                            }
+
+
                             cacheObject.query(new SqlFieldsQuery(insertSQL.toString()).setArgs(args.toArray()));
                         }
                     }

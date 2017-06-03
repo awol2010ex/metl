@@ -52,3 +52,12 @@ dependencies {
     testCompile project(":comp-unoffice-mongodb")
     testCompile project(":comp-unoffice-ignite");
 }
+
+
+task runTestMetl(type: JavaExec) {
+    description 'Run Test Server'
+    classpath = sourceSets.test.compileClasspath
+
+
+    main ="org.jumpmind.metl.Develop"
+}

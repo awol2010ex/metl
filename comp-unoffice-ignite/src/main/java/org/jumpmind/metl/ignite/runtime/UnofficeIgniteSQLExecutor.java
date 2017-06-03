@@ -51,10 +51,18 @@ public class UnofficeIgniteSQLExecutor extends AbstractRdbmsComponentRuntime {
         if (getResourceRuntime() == null) {
             throw new IllegalStateException("An Ignite sql executor must have a ignite cache defined");
         }
+
+
+        this.initIgniteClient();
+
+    }
+
+
+
+    //init client
+    private void initIgniteClient(){
         igniteClient=(Ignite)this.getResourceReference();
-
         unofficeIgniteCache =(UnofficeIgniteCache)this.getResourceRuntime();
-
         cacheObject =igniteClient.getOrCreateCache(unofficeIgniteCache.getCacheName());
     }
     @Override
@@ -62,8 +70,12 @@ public class UnofficeIgniteSQLExecutor extends AbstractRdbmsComponentRuntime {
         return true;
     }
 
+
+    //init client
     @Override
     public void handle(Message inputMessage, ISendMessageCallback callback, boolean unitOfWorkBoundaryReached) {
+        initIgniteClient();
+
         results.clear();
 
         int sqlCount = 0;

@@ -62,7 +62,7 @@ public class UnofficeIgniteCache extends AbstractResourceRuntime {
             TcpDiscoverySpi tcpDiscoverySpi = new TcpDiscoverySpi();
             tcpDiscoverySpi.setIpFinder(ipFinder);
             cfg.setDiscoverySpi(tcpDiscoverySpi);
-            tcpDiscoverySpi.setClientReconnectDisabled(true);
+            tcpDiscoverySpi.setClientReconnectDisabled(false);
 
             // Configure Ignite here.
             TcpCommunicationSpi commSpi = new TcpCommunicationSpi();
@@ -87,8 +87,16 @@ public class UnofficeIgniteCache extends AbstractResourceRuntime {
             igniteClient =Ignition.getOrStart(cfg);
         }
         else{
-            if(!igniteClient.active()){
+            boolean  isactive=false;
+
+            try{
+                isactive= igniteClient.active();
+            }catch(Exception e){
+                log.error("",e);
+            }
+            if(!isactive){
                 igniteClient.close();
+
                 igniteClient=null;
                 Ignition.setClientMode(true);
                 igniteClient =Ignition.getOrStart(cfg);
