@@ -37,7 +37,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.jumpmind.db.platform.DatabaseNamesConstants;
+import org.jumpmind.db.platform.IDatabasePlatform;
+import org.jumpmind.db.platform.JdbcDatabasePlatformFactory;
 import org.jumpmind.db.sql.SqlException;
+import org.jumpmind.db.sql.SqlTemplateSettings;
 import org.jumpmind.metl.core.model.Model;
 import org.jumpmind.metl.core.model.ModelAttribute;
 import org.jumpmind.metl.core.model.ModelEntity;
@@ -49,6 +53,7 @@ import org.jumpmind.metl.core.runtime.LogLevel;
 import org.jumpmind.metl.core.runtime.Message;
 import org.jumpmind.metl.core.runtime.MisconfiguredException;
 import org.jumpmind.metl.core.runtime.flow.ISendMessageCallback;
+import org.jumpmind.metl.core.runtime.resource.Datasource;
 import org.jumpmind.properties.TypedProperties;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ResultSetExtractor;
@@ -93,7 +98,11 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
     int rowReadDuringHandle;
     
     String unitOfWork = COMPONENT_LIFETIME;
-    
+
+    IDatabasePlatform platform=null;
+
+    long DB2_PAGESIZE= 50000L;
+
     @Override
     public void start() {
         TypedProperties properties = getTypedProperties();
@@ -105,6 +114,12 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
         runWhen = properties.get(RUN_WHEN, runWhen);
         unitOfWork = properties.get(UNIT_OF_WORK, unitOfWork);
         queryTimeout = properties.getInt(QUERY_TIMEOUT, queryTimeout);
+
+
+        Datasource datasource =(Datasource)this.getResourceRuntime();
+        platform =JdbcDatabasePlatformFactory.createNewPlatformInstance(datasource.reference(),new SqlTemplateSettings(), false, false);
+
+
     }
 
     @Override
@@ -157,7 +172,26 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
                 log(LogLevel.INFO, "About to run: %s", sqlToExecute);
                 log(LogLevel.INFO, "Passing params: %s", paramMap);
                 resultSetToEntityDataConverter.setSqlToExecute(sqlToExecute);
-                template.query(sqlToExecute, paramMap, resultSetToEntityDataConverter);
+
+
+                if(DatabaseNamesConstants.DB2.equals( platform.getName()) && PER_UNIT_OF_WORK.equals(runWhen)){
+                    Long total =template.queryForObject("select count(1) from ( "+sqlToExecute+" )t ",paramMap,Long.class);
+
+                    if (total > 0) {
+                        Long  totalPage = total / DB2_PAGESIZE +1 ;
+                        if(total % DB2_PAGESIZE==0){
+                            totalPage--;
+                        }
+                        for(int index=0;index<totalPage;index++){
+                            String pageSQL ="select t.* from (select rownumber() over() as $$ROWINDEX ,t.* from ("+sql+") t ) t where $$ROWINDEX >="+(index*DB2_PAGESIZE+1)+"  and  $$ROWINDEX<  "+(index*DB2_PAGESIZE+DB2_PAGESIZE+1);
+                            template.query(pageSQL, paramMap, resultSetToEntityDataConverter);
+                            outboundPayload.clear();
+                        }
+                    }
+                }
+                else {
+                    template.query(sqlToExecute, paramMap, resultSetToEntityDataConverter);
+                }
                 if (unitOfWork.equalsIgnoreCase(SQL_STATEMENT)) {
                     sendLeftOverRows(callback, outboundPayload ,headers);
                     callback.sendControlMessage();
