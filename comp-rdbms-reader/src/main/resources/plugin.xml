@@ -89,6 +89,23 @@
         <name>Pass Input Rows Through</name>
         <defaultValue>false</defaultValue>
       </setting>
+
+
+
+
+      <setting id='pagine.usepage'
+               required='false'
+               type='boolean'>
+        <name>Sending Entitys usepage</name>
+        <defaultValue>false</defaultValue>
+      </setting>
+
+      <setting id='pagine.pagesize'
+               required='false'
+               type='long'>
+        <name>Sending Entitys Page Size</name>
+        <defaultValue>10000</defaultValue>
+      </setting>
     </settings>
   </component>
 </definitions>

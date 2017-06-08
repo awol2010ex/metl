@@ -101,7 +101,9 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
 
     IDatabasePlatform platform=null;
 
-    long DB2_PAGESIZE= 50000L;
+
+    boolean usePage =false;
+    long pageinePageSize= 10000L;
 
     @Override
     public void start() {
@@ -114,6 +116,9 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
         runWhen = properties.get(RUN_WHEN, runWhen);
         unitOfWork = properties.get(UNIT_OF_WORK, unitOfWork);
         queryTimeout = properties.getInt(QUERY_TIMEOUT, queryTimeout);
+
+        usePage= Boolean.valueOf( properties.get ("pagine.usepage", "false"));
+        pageinePageSize =properties.getLong("pagine.pagesize",10000L);
 
 
         Datasource datasource =(Datasource)this.getResourceRuntime();
@@ -174,16 +179,16 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
                 resultSetToEntityDataConverter.setSqlToExecute(sqlToExecute);
 
 
-                if(DatabaseNamesConstants.DB2.equals( platform.getName()) && PER_UNIT_OF_WORK.equals(runWhen)){
+                if(usePage && DatabaseNamesConstants.DB2.equals( platform.getName()) && PER_UNIT_OF_WORK.equals(runWhen)){
                     Long total =template.queryForObject("select count(1) from ( "+sqlToExecute+" )t ",paramMap,Long.class);
 
                     if (total > 0) {
-                        Long  totalPage = total / DB2_PAGESIZE +1 ;
-                        if(total % DB2_PAGESIZE==0){
+                        Long  totalPage = total / pageinePageSize +1 ;
+                        if(total % pageinePageSize==0){
                             totalPage--;
                         }
                         for(int index=0;index<totalPage;index++){
-                            String pageSQL ="select t.* from (select rownumber() over() as $$ROWINDEX ,t.* from ("+sql+") t ) t where $$ROWINDEX >="+(index*DB2_PAGESIZE+1)+"  and  $$ROWINDEX<  "+(index*DB2_PAGESIZE+DB2_PAGESIZE+1);
+                            String pageSQL ="select t.* from (select t.*,rownumber() over() as $$ROWINDEX  from ("+sql+") t ) t where $$ROWINDEX >="+(index*pageinePageSize+1)+"  and  $$ROWINDEX<  "+(index*pageinePageSize+pageinePageSize+1);
                             template.query(pageSQL, paramMap, resultSetToEntityDataConverter);
                             outboundPayload.clear();
                         }
@@ -543,6 +548,10 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
                         rowData.put(attributeId, value);
                     }
                 }
+                if(usePage){
+                    rowData.put("$$ROWINDEX" ,rs.getLong("$$ROWINDEX"));
+                }
+
 
 
                 if(attributesMap==null) {
