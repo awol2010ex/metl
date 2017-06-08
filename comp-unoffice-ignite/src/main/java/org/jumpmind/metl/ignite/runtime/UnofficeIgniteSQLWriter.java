@@ -119,9 +119,9 @@ public class UnofficeIgniteSQLWriter extends AbstractComponentRuntime {
             ArrayList<EntityData> inputRows = ((EntityDataMessage) inputMessage).getPayload();
             if (inputRows != null && inputRows.size() > 0) {
 
-                IgniteAtomicSequence seq = igniteClient.atomicSequence("seqName",//序列名
-                        0, //初始值
-                        true//如果序列不存在则创建
+                IgniteAtomicSequence seq = igniteClient.atomicSequence("seqName",//seq
+                        0, //init value
+                        true//when not exits create
                 );
                 try {
 
@@ -142,7 +142,12 @@ public class UnofficeIgniteSQLWriter extends AbstractComponentRuntime {
                                 }
                             }
                             if(!hasPk){
-                                args.add(seq.incrementAndGet());
+                                if(row.get("$$ROWINDEX")!=null){
+                                    args.add((Long)row.get("$$ROWINDEX"));
+                                }
+                                else {
+                                    args.add(seq.incrementAndGet());
+                                }
                             }
 
 
