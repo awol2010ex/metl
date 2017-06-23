@@ -165,7 +165,9 @@ public class CustomSqlExplorer extends HorizontalSplitPanel {
                 dbTree.refresh();
                 Component tab = contentTabs.getSelectedTab();
                 if (tab instanceof QueryPanel) {
-                    findQueryPanelForDb(((QueryPanel)tab).getDb()).suggester.clearCaches();
+                    if (findQueryPanelForDb(((QueryPanel) tab).getDb()).suggester != null) {
+                        findQueryPanelForDb(((QueryPanel) tab).getDb()).suggester.clearCaches();
+                    }
                 }
             }
         });
@@ -265,6 +267,8 @@ public class CustomSqlExplorer extends HorizontalSplitPanel {
                 } else if (!settingsProvider.get().getProperties().is(Settings.SQL_EXPLORER_SHOW_RESULTS_IN_NEW_TABS)) {
                     queryPanel.createGeneralResultsTab();
                 }
+                boolean autoCompleteEnabled = settingsProvider.get().getProperties().is(Settings.SQL_EXPLORER_AUTO_COMPLETE);
+                queryPanel.setAutoCompleteEnabled(autoCompleteEnabled);
             }
         }
     }

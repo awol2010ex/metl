@@ -25,6 +25,8 @@ public class CustomSettingsDialog extends ResizableWindow {
 
     private CheckBox autoCommitBox;
 
+    private CheckBox autoCompleteBox;
+
     private TextField delimiterField;
 
     private TextField excludeTablesWithPrefixField;
@@ -103,6 +105,15 @@ public class CustomSettingsDialog extends ResizableWindow {
         }
         settingsLayout.addComponent(autoCommitBox);
 
+        autoCompleteBox = new CheckBox("Auto Complete");
+        String autoCompleteValue = (properties.getProperty(SQL_EXPLORER_AUTO_COMPLETE, "true"));
+        if (autoCompleteValue.equals("true")) {
+            autoCompleteBox.setValue(true);
+        } else {
+            autoCompleteBox.setValue(false);
+        }
+        settingsLayout.addComponent(autoCompleteBox);
+
         showRowNumbersBox = new CheckBox("Show Row Numbers");
         String showRowNumbersValue = (properties.getProperty(Settings.SQL_EXPLORER_SHOW_ROW_NUMBERS, "true"));
         if (showRowNumbersValue.equals("true")) {
@@ -148,6 +159,7 @@ public class CustomSettingsDialog extends ResizableWindow {
             properties.setProperty(Settings.SQL_EXPLORER_MAX_RESULTS, new DecimalFormat().parse(rowsToFetchField.getValue()).intValue());
             properties.setProperty(Settings.SQL_EXPLORER_AUTO_COMMIT,
                     String.valueOf(autoCommitBox.getValue()));
+            properties.setProperty(Settings.SQL_EXPLORER_AUTO_COMPLETE, String.valueOf(autoCompleteBox.getValue()));
             properties.setProperty(Settings.SQL_EXPLORER_DELIMITER, delimiterField.getValue());
             properties.setProperty(Settings.SQL_EXPLORER_RESULT_AS_TEXT,
                     String.valueOf(resultAsTextBox.getValue()));

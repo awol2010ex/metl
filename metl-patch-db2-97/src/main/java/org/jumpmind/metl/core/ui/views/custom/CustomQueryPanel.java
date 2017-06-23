@@ -23,12 +23,9 @@ import org.jumpmind.vaadin.ui.common.CommonUiUtils;
 import org.jumpmind.vaadin.ui.sqlexplorer.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.vaadin.aceeditor.AceEditor;
+import org.vaadin.aceeditor.*;
 import org.vaadin.aceeditor.AceEditor.SelectionChangeEvent;
 import org.vaadin.aceeditor.AceEditor.SelectionChangeListener;
-import org.vaadin.aceeditor.AceMode;
-import org.vaadin.aceeditor.SuggestionExtension;
-import org.vaadin.aceeditor.TextRange;
 
 import java.io.Serializable;
 import java.sql.Connection;
@@ -40,7 +37,7 @@ import static org.jumpmind.vaadin.ui.sqlexplorer.Settings.*;
 
 public class CustomQueryPanel extends VerticalSplitPanel implements IContentTab {
 
-    protected static final Logger log = LoggerFactory.getLogger(org.jumpmind.vaadin.ui.sqlexplorer.QueryPanel.class);
+    protected static final Logger log = LoggerFactory.getLogger(CustomQueryPanel.class);
 
     private static final long serialVersionUID = 1L;
 
@@ -85,6 +82,10 @@ public class CustomQueryPanel extends VerticalSplitPanel implements IContentTab 
     Map<Component, String> resultStatuses;
 
     Tab generalResultsTab;
+
+    private SuggestionExtension suggestionExtension;
+
+    private AceEditor editor;
 
     transient Set<CustomSqlRunner> runnersInProgress = new HashSet<CustomSqlRunner>();
 
@@ -137,7 +138,7 @@ public class CustomQueryPanel extends VerticalSplitPanel implements IContentTab 
     }
 
     protected AceEditor buildSqlEditor() {
-        final AceEditor editor = CommonUiUtils.createAceEditor();
+        editor = CommonUiUtils.createAceEditor();
         editor.setMode(AceMode.sql);
         editor.addValueChangeListener(new ValueChangeListener() {
 
@@ -156,8 +157,12 @@ public class CustomQueryPanel extends VerticalSplitPanel implements IContentTab 
             }
         });
 
-        suggester = new SqlSuggester(db);
-        new SuggestionExtension(suggester).extend(editor);
+        boolean autoSuggestEnabled = settingsProvider.get().getProperties().is(SQL_EXPLORER_AUTO_COMPLETE);
+        setAutoCompleteEnabled(autoSuggestEnabled);
+
+
+        //suggester = new SqlSuggester(db);
+        //new SuggestionExtension(suggester).extend(editor);
 
         selectionChangeListener = new DummyChangeListener();
         return editor;
@@ -605,6 +610,21 @@ public class CustomQueryPanel extends VerticalSplitPanel implements IContentTab 
         return sql;
     }
 
+    public void setAutoCompleteEnabled(boolean enabled) {
+        if (enabled) {
+            suggester = new SqlSuggester(db);
+            suggestionExtension = new SuggestionExtension(suggester);
+            suggestionExtension.extend(editor);
+        } else if (suggestionExtension != null) {
+            suggestionExtension.remove();
+            CustomQueryPanel.BlankSuggester blank = new CustomQueryPanel.BlankSuggester();
+            suggestionExtension = new SuggestionExtension(blank);
+            suggestionExtension.extend(editor);
+        }
+    }
+
+
+
     class DummyChangeListener implements SelectionChangeListener, Serializable {
         private static final long serialVersionUID = 1L;
 
@@ -613,5 +633,17 @@ public class CustomQueryPanel extends VerticalSplitPanel implements IContentTab 
         }
     }
 
+    class BlankSuggester implements Suggester {
+
+        @Override
+        public List<Suggestion> getSuggestions(String text, int cursor) {
+            return new ArrayList<Suggestion>();
+        }
+
+        @Override
+        public String applySuggestion(Suggestion sugg, String text, int cursor) {
+            return null;
+        }
+    }
 }
 
