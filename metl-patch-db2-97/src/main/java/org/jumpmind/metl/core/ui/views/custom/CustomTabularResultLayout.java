@@ -13,6 +13,7 @@ import com.vaadin.data.util.converter.Converter;
 import com.vaadin.data.util.converter.StringToBigDecimalConverter;
 import com.vaadin.data.util.converter.StringToBooleanConverter;
 import com.vaadin.data.util.converter.StringToLongConverter;
+import com.vaadin.event.ContextClickEvent;
 import com.vaadin.event.ItemClickEvent;
 import com.vaadin.event.ItemClickEvent.ItemClickListener;
 import com.vaadin.server.FontAwesome;
@@ -54,7 +55,6 @@ import java.util.*;
 
 import static org.apache.commons.lang.StringUtils.isBlank;
 import static org.apache.commons.lang.StringUtils.isNotBlank;
-
 public class CustomTabularResultLayout extends VerticalLayout {
 
     private static final long serialVersionUID = 1L;
@@ -66,6 +66,8 @@ public class CustomTabularResultLayout extends VerticalLayout {
     final String ACTION_UPDATE = "Update";
 
     final String ACTION_DELETE = "Delete";
+
+    final String ACTION_COPY_FIELD_NAME = "Copy Field Name";
 
     final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -104,6 +106,9 @@ public class CustomTabularResultLayout extends VerticalLayout {
     MenuBar.MenuItem toggleKeepResultsButton;
 
     Label resultLabel;
+
+    String currentColumnName =null;
+
 
     public CustomTabularResultLayout(IDb db, String sql, ResultSet rs, CustomSqlRunner.ISqlRunnerListener listener, Settings settings, boolean showSql)
             throws SQLException {
@@ -198,11 +203,33 @@ public class CustomTabularResultLayout extends VerticalLayout {
                 }
             });
 
+            menu.addItem(ACTION_COPY_FIELD_NAME, new ContextMenu.Command() {
+
+                private static final long serialVersionUID = 1L;
+
+                @Override
+                public void menuSelected(com.vaadin.addon.contextmenu.MenuItem selectedItem) {
+                    handleAction(ACTION_COPY_FIELD_NAME);
+                }
+            });
+
+
+
+
             if (resultTable != null && resultTable.getForeignKeyCount() > 0) {
                 followToMenu = menu.addItem("Follow to", null);
                 buildFollowToMenu();
             }
 
+            grid.addContextClickListener(new ContextClickEvent.ContextClickListener() {
+                @Override
+                public void contextClick(ContextClickEvent event) {
+                    if("HEADER".equals( ((Grid.GridContextClickEvent) event).getSection().name() )){
+                        currentColumnName =((Grid.GridContextClickEvent) event).getPropertyId().toString();
+                    }
+
+                }
+            });
             grid.addItemClickListener(new ItemClickListener() {
 
                 private static final long serialVersionUID = 1L;
@@ -216,6 +243,10 @@ public class CustomTabularResultLayout extends VerticalLayout {
                             if (event.isDoubleClick() && !grid.isEditorEnabled()) {
                                 Object prop = event.getPropertyId();
                                 String header = grid.getColumn(prop).getHeaderCaption();
+
+
+
+
                                 Property<?> p = event.getItem().getItemProperty(prop);
                                 if (p != null) {
                                     String data = String.valueOf(p.getValue());
@@ -470,6 +501,10 @@ public class CustomTabularResultLayout extends VerticalLayout {
                     sql.append(";");
                     listener.writeSql(sql.toString());
                 }
+            }
+
+            if(action.equals(ACTION_COPY_FIELD_NAME)){
+                queryPanel.appendSql(currentColumnName);
             }
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);

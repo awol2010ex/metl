@@ -20,6 +20,7 @@ import com.vaadin.ui.TabSheet.Tab;
 import com.vaadin.ui.themes.ValoTheme;
 import org.apache.commons.lang.StringUtils;
 import org.jumpmind.vaadin.ui.common.CommonUiUtils;
+
 import org.jumpmind.vaadin.ui.sqlexplorer.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +34,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static org.apache.commons.lang.StringUtils.isNotBlank;
-import static org.jumpmind.vaadin.ui.sqlexplorer.Settings.*;
+import static org.jumpmind.vaadin.ui.sqlexplorer.Settings.SQL_EXPLORER_AUTO_COMPLETE;
 
 public class CustomQueryPanel extends VerticalSplitPanel implements IContentTab {
 
