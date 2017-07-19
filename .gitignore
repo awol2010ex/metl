@@ -7,3 +7,4 @@
 metl-war\src\main\webapp
 build
 **/working
+**/out
