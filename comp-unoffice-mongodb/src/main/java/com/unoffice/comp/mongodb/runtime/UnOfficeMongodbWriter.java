@@ -8,7 +8,7 @@ import com.mongodb.client.MongoDatabase;
 import com.unoffice.comp.mongodb.resource.UnOfficeMongoDBResource;
 import org.bson.Document;
 import org.jumpmind.metl.core.model.Model;
-import org.jumpmind.metl.core.model.ModelAttribute;
+import org.jumpmind.metl.core.model.ModelAttrib;
 import org.jumpmind.metl.core.model.ModelEntity;
 import org.jumpmind.metl.core.runtime.EntityData;
 import org.jumpmind.metl.core.runtime.EntityDataMessage;
@@ -37,7 +37,7 @@ public class UnOfficeMongodbWriter extends AbstractComponentRuntime {
     private Model inputModel ;
     private List<ModelEntity> inputModelEntityList;
     private ModelEntity inputModelEntity;
-    private List<ModelAttribute> inputModelAttributeList;
+    private List<ModelAttrib> inputModelAttributeList;
 
 
     /*mongodb params*/
@@ -105,7 +105,7 @@ public class UnOfficeMongodbWriter extends AbstractComponentRuntime {
                             }
 
                             Document document = new Document();
-                            for (ModelAttribute ma : inputModelAttributeList) {
+                            for (ModelAttrib ma : inputModelAttributeList) {
                                 document.append(ma.getName(), row.get(ma.getId()));
                             }
 

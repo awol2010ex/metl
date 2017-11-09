@@ -43,7 +43,7 @@ import org.jumpmind.db.platform.JdbcDatabasePlatformFactory;
 import org.jumpmind.db.sql.SqlException;
 import org.jumpmind.db.sql.SqlTemplateSettings;
 import org.jumpmind.metl.core.model.Model;
-import org.jumpmind.metl.core.model.ModelAttribute;
+import org.jumpmind.metl.core.model.ModelAttrib;
 import org.jumpmind.metl.core.model.ModelEntity;
 import org.jumpmind.metl.core.runtime.ContentMessage;
 import org.jumpmind.metl.core.runtime.ControlMessage;
@@ -243,12 +243,16 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
                 tableName = getTableNameFromSql(sql);
             }
 
-            if (matchOnColumnNameOnly) {
-                attributeIds.addAll(getAttributeIds(columnName));
-
-                /*not throws Exception when matchOnColumnNameOnly --start*/
-                attributeFound = true;
-                /*--end*/
+           if (matchOnColumnNameOnly) {
+                List<String> foundIds = getAttributeIds(columnName);
+                if (foundIds.size() == 1) {
+                    attributeIds.addAll(foundIds);
+                    attributeFound = true;
+                } 
+                if (foundIds.size() > 1) {
+                    throw new MisconfiguredException(String.format("Ambiguous attribute name in model. "
+                            + "Cannot match column name to unique attribute. Column: '%s')",columnName));
+                }
             } else {
                 if (StringUtils.isEmpty(tableName)) {
                     throw new MisconfiguredException("Table name could not be determined from metadata or hints.  Please check column and hint.  "
@@ -319,11 +323,11 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
     private List<String> getAttributeIds(String columnName) {
         List<String> attributeIds = new ArrayList<String>();
         if (getOutputModel() != null) {
-            List<ModelAttribute> attributes = getOutputModel().getAttributesByName(columnName);
+            List<ModelAttrib> attributes = getOutputModel().getAttributesByName(columnName);
             if (attributes.size() == 0) {
                 throw new SqlException("Column not found in output model and not specified via hint.  Column Name = " + columnName);
             } else {
-                for (ModelAttribute modelAttribute : attributes) {
+                for (ModelAttrib modelAttribute : attributes) {
                     attributeIds.add(modelAttribute.getId());
                 }
             }
@@ -335,7 +339,7 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
 
     private String getAttributeId(String tableName, String columnName) {
         if (getOutputModel() != null) {
-            ModelAttribute modelAttribute = getOutputModel().getAttributeByName(tableName, columnName);
+            ModelAttrib modelAttribute = getOutputModel().getAttributeByName(tableName, columnName);
             if (modelAttribute != null) {
                 return modelAttribute.getId();
             } else {
@@ -355,12 +359,17 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
             commentIdx = columns.indexOf("/*", commentIdx) + 2;
             int columnIdx = countColumnSeparatingCommas(columns.substring(0, commentIdx)) + 1;
             String entity = StringUtils.trimWhitespace(columns.substring(commentIdx, columns.indexOf("*/", commentIdx)));
-            if (!used.contains(entity)) {
-                columnEntityHints.put(columnIdx, entity);
-                used.add(entity);
-            } else {
-                throw new MisconfiguredException("The same hint was used twice.  Only one column can map to an entity attribute.  The hint that was repeated was for " + entity);
+            // Only check for dupes if the entity and attributes are provided.
+            if (entity.contains(".")) {
+                if (!used.contains(entity)) {
+                    used.add(entity);
+                } else {
+                    throw new MisconfiguredException("The same hint was used twice.  "
+                            + "Only one column can map to an entity attribute.  "
+                            + "The hint that was repeated was for " + entity);
+                }
             }
+            columnEntityHints.put(columnIdx, entity);
         }
         return columnEntityHints;
     }
@@ -415,7 +424,7 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
             }
             sb.append("   \"").append(entity.getName()).append("\" { ");
             boolean firstAttribute = true;
-            for (ModelAttribute attribute : entity.getModelAttributes()) {
+            for (ModelAttrib attribute : entity.getModelAttributes()) {
                 if (rowData.containsKey(attribute.getId())) {
                     if (firstAttribute) {
                         firstAttribute = false;
@@ -436,7 +445,7 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
         Set<ModelEntity> entities = new LinkedHashSet<ModelEntity>();
         Model model = getOutputModel();
         for (String attributeId : rowData.keySet()) {
-            ModelAttribute attribute = model.getAttributeById(attributeId);
+            ModelAttrib attribute = model.getAttributeById(attributeId);
             if (attribute != null) {
                 ModelEntity entity = model.getEntityById(attribute.getEntityId());
                 if (entity != null) {
@@ -558,7 +567,7 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
                     attributesMap = new HashMap<String, String[]>();
                     Set<ModelEntity> attributes = RdbmsReader.this.getModelEntities(rowData);
                     for (ModelEntity entity : attributes) {
-                        for (ModelAttribute attribute : entity.getModelAttributes()) {
+                        for (ModelAttrib attribute : entity.getModelAttributes()) {
 
                             attributesMap.put(attribute.getId(), new String[]{entity.getName() , attribute.getName()});
                         }

@@ -36,9 +36,9 @@ import java.util.Map;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jumpmind.exception.IoException;
-import org.jumpmind.metl.core.model.ComponentAttributeSetting;
+import org.jumpmind.metl.core.model.ComponentAttribSetting;
 import org.jumpmind.metl.core.model.Model;
-import org.jumpmind.metl.core.model.ModelAttribute;
+import org.jumpmind.metl.core.model.ModelAttrib;
 import org.jumpmind.metl.core.model.ModelEntity;
 import org.jumpmind.metl.core.runtime.EntityData;
 import org.jumpmind.metl.core.runtime.EntityDataMessage;
@@ -61,12 +61,16 @@ public class DelimitedFormatter extends AbstractComponentRuntime {
     public final static String DELIMITED_FORMATTER_ATTRIBUTE_FORMAT_FUNCTION = "delimited.formatter.attribute.format.function";
 
     public final static String DELIMITED_FORMATTER_ATTRIBUTE_ORDINAL = "delimited.formatter.attribute.ordinal";
+    
+    public final static String DELIMITED_FORMATTER_ATTRIBUTE_TRIM_COLUMNS = "delimited.formatter.attribute.trim.columns";
 
     String delimiter = ",";
 
     String quoteCharacter = "\"";
 
     boolean useHeader;
+    
+    boolean trimColumns = true;
 
     List<AttributeFormat> attributes = new ArrayList<AttributeFormat>();
 
@@ -76,6 +80,7 @@ public class DelimitedFormatter extends AbstractComponentRuntime {
         delimiter = StringEscapeUtils.unescapeJava(getComponent().get(DELIMITED_FORMATTER_DELIMITER, delimiter));
         quoteCharacter = properties.get(DELIMITED_FORMATTER_QUOTE_CHARACTER);
         useHeader = properties.is(DELIMITED_FORMATTER_WRITE_HEADER);
+        trimColumns = properties.is(DELIMITED_FORMATTER_ATTRIBUTE_TRIM_COLUMNS, true);
         convertAttributeSettingsToAttributeFormat();
     }
 
@@ -101,14 +106,7 @@ public class DelimitedFormatter extends AbstractComponentRuntime {
                 try {
                     for (AttributeFormat attr : attributes) {
                         if (attr.getAttribute() != null) {
-                            ModelAttribute at=attr.getAttribute();
-                            /*when  Description  exists ,use Description to write header*/
-                            if(StringUtils.isNotBlank(at.getDescription())){
-                                csvWriter.write(at.getDescription());
-                            }
-                            else {
-                                csvWriter.write(at.getName());
-                            }
+                            csvWriter.write(attr.getAttribute().getName(), !trimColumns);
                         }
                     }
                 } catch (IOException e) {
@@ -140,12 +138,12 @@ public class DelimitedFormatter extends AbstractComponentRuntime {
                                 attribute.getEntity(), inputRow, attribute.getFormatFunction());
                     }
 
-                    csvWriter.write(object != null ? object.toString() : null);
+                    csvWriter.write(object != null ? object.toString() : null,!trimColumns);
                 }
             } else {
                 Collection<Object> values = inputRow.values();
                 for (Object object : values) {
-                    csvWriter.write(object != null ? object.toString() : null);
+                    csvWriter.write(object != null ? object.toString() : null, !trimColumns);
                 }
 
             }
@@ -165,14 +163,22 @@ public class DelimitedFormatter extends AbstractComponentRuntime {
         return csvWriter;
     }
 
+    public void setTrimColumns(boolean trimColumns) {
+        this.trimColumns = trimColumns;
+    }
+    
+    public boolean isTrimColumns() {
+        return trimColumns;
+    }
+
     private void convertAttributeSettingsToAttributeFormat() {
-        List<ComponentAttributeSetting> attributeSettings = getComponent().getAttributeSettings();
+        List<ComponentAttribSetting> attributeSettings = getComponent().getAttributeSettings();
         Map<String, AttributeFormat> formats = new HashMap<String, AttributeFormat>();
-        for (ComponentAttributeSetting attributeSetting : attributeSettings) {
+        for (ComponentAttribSetting attributeSetting : attributeSettings) {
             AttributeFormat format = formats.get(attributeSetting.getAttributeId());
             if (format == null) {
                 Model inputModel = getComponent().getInputModel();
-                ModelAttribute attribute = inputModel.getAttributeById(attributeSetting.getAttributeId());
+                ModelAttrib attribute = inputModel.getAttributeById(attributeSetting.getAttributeId());
                 if (attribute != null) {
                     ModelEntity entity = inputModel.getEntityById(attribute.getEntityId());
                     format = new AttributeFormat(attributeSetting.getAttributeId(), entity, attribute);
@@ -199,12 +205,12 @@ public class DelimitedFormatter extends AbstractComponentRuntime {
     private class AttributeFormat {
 
         ModelEntity entity;
-        ModelAttribute attribute;
+        ModelAttrib attribute;
         String attributeId;
         int ordinal;
         String formatFunction;
 
-        public AttributeFormat(String attributeId, ModelEntity entity, ModelAttribute attribute) {
+        public AttributeFormat(String attributeId, ModelEntity entity, ModelAttrib attribute) {
             this.attributeId = attributeId;
             this.entity = entity;
             this.attribute = attribute;
@@ -230,13 +236,15 @@ public class DelimitedFormatter extends AbstractComponentRuntime {
             this.formatFunction = formatFunction;
         }
 
-        public ModelAttribute getAttribute() {
+        public ModelAttrib getAttribute() {
             return attribute;
         }
 
         public ModelEntity getEntity() {
             return entity;
         }
+        
+       
     }
 
 }

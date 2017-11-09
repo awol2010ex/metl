@@ -27,11 +27,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.jumpmind.metl.core.model.Component;
-import org.jumpmind.metl.core.model.ComponentAttributeSetting;
+import org.jumpmind.metl.core.model.ComponentAttribSetting;
 import org.jumpmind.metl.core.model.Model;
 import org.jumpmind.metl.core.runtime.EntityData;
 import org.jumpmind.metl.core.runtime.EntityDataMessage;
 import org.jumpmind.metl.core.runtime.Message;
+import org.jumpmind.metl.core.runtime.MisconfiguredException;
 import org.jumpmind.metl.core.runtime.flow.ISendMessageCallback;
 
 public class Merger extends AbstractComponentRuntime {
@@ -49,17 +50,21 @@ public class Merger extends AbstractComponentRuntime {
         Component component = getComponent();
         Model inputModel = component.getInputModel();
         if (inputModel == null) {
-            throw new IllegalStateException("The input model is required and has not yet been set");
+            throw new MisconfiguredException("The input model is required and has not yet been set");
         }
-
-        List<ComponentAttributeSetting> settings = component.getAttributeSettings();
+        
+        List<ComponentAttribSetting> settings = component.getAttributeSettings();
         if (settings != null) {
-            for (ComponentAttributeSetting componentAttributeSetting : settings) {
+            for (ComponentAttribSetting componentAttributeSetting : settings) {
                 if (componentAttributeSetting.getName().equals(MERGE_ATTRIBUTE)
                         && Boolean.parseBoolean(componentAttributeSetting.getValue())) {
                     attributesToMergeOn.add(componentAttributeSetting.getAttributeId());
                 }
             }
+        }
+
+        if (attributesToMergeOn.size() == 0) {
+            throw new MisconfiguredException("At least one attribute must be selected for joining.");
         }
     }
 

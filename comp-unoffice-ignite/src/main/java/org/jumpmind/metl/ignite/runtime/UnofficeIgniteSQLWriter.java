@@ -6,7 +6,7 @@ import org.apache.ignite.IgniteAtomicSequence;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.cache.query.SqlFieldsQuery;
 import org.jumpmind.metl.core.model.Model;
-import org.jumpmind.metl.core.model.ModelAttribute;
+import org.jumpmind.metl.core.model.ModelAttrib;
 import org.jumpmind.metl.core.model.ModelEntity;
 import org.jumpmind.metl.core.runtime.EntityData;
 import org.jumpmind.metl.core.runtime.EntityDataMessage;
@@ -33,7 +33,7 @@ public class UnofficeIgniteSQLWriter extends AbstractComponentRuntime {
     private Model inputModel;
     private List<ModelEntity> inputModelEntityList;
     private ModelEntity inputModelEntity;
-    private List<ModelAttribute> inputModelAttributeList;
+    private List<ModelAttrib> inputModelAttributeList;
 
     private StringBuffer insertSQL =new StringBuffer();
 
@@ -77,7 +77,7 @@ public class UnofficeIgniteSQLWriter extends AbstractComponentRuntime {
 
         List<String> el =new ArrayList();
         boolean hasPk =false;
-        for (ModelAttribute ma : inputModelAttributeList) {
+        for (ModelAttrib ma : inputModelAttributeList) {
             el.add(ma.getName());
             if(ma.isPk()){
                 hasPk =true;
@@ -91,7 +91,7 @@ public class UnofficeIgniteSQLWriter extends AbstractComponentRuntime {
         insertSQL.append(") values (");
 
         List<String> vl =new ArrayList();
-        for (ModelAttribute ma : inputModelAttributeList) {
+        for (ModelAttrib ma : inputModelAttributeList) {
             vl.add("?");
         }
         if(!hasPk){
@@ -135,7 +135,7 @@ public class UnofficeIgniteSQLWriter extends AbstractComponentRuntime {
 
                             boolean hasPk =false;
 
-                            for (ModelAttribute ma : inputModelAttributeList) {
+                            for (ModelAttrib ma : inputModelAttributeList) {
                                 args.add( row.get(ma.getId()));
                                 if(ma.isPk()){
                                     hasPk =true;

@@ -1,14 +1,34 @@
+/**
+ * Licensed to JumpMind Inc under one or more contributor
+ * license agreements.  See the NOTICE file distributed
+ * with this work for additional information regarding
+ * copyright ownership.  JumpMind Inc licenses this file
+ * to you under the GNU General Public License, version 3.0 (GPLv3)
+ * (the "License"); you may not use this file except in compliance
+ * with the License.
+ *
+ * You should have received a copy of the GNU General Public License,
+ * version 3.0 (GPLv3) along with this library; if not, see
+ * <http://www.gnu.org/licenses/>.
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.jumpmind.metl.core.runtime.component;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Types;
 import java.util.List;
 import java.util.UUID;
+
+import javax.sql.DataSource;
 
 import org.apache.commons.io.FileUtils;
 import org.h2.Driver;
@@ -23,7 +43,7 @@ import org.jumpmind.db.util.ResettableBasicDataSource;
 import org.jumpmind.metl.core.model.Component;
 import org.jumpmind.metl.core.model.DataType;
 import org.jumpmind.metl.core.model.Model;
-import org.jumpmind.metl.core.model.ModelAttribute;
+import org.jumpmind.metl.core.model.ModelAttrib;
 import org.jumpmind.metl.core.model.ModelEntity;
 import org.jumpmind.metl.core.runtime.ControlMessage;
 import org.jumpmind.metl.core.runtime.LogLevel;
@@ -31,8 +51,9 @@ import org.jumpmind.metl.core.runtime.Message;
 import org.jumpmind.metl.core.runtime.MisconfiguredException;
 import org.jumpmind.metl.core.runtime.flow.ISendMessageCallback;
 import org.jumpmind.properties.TypedProperties;
-
-import javax.sql.DataSource;
+import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 public class TempRdbms extends AbstractRdbmsComponentRuntime  {
 
@@ -41,6 +62,8 @@ public class TempRdbms extends AbstractRdbmsComponentRuntime  {
     public static String CONTINUE_ON_ERROR = "continue.on.error";
     
     public static String BATCH_MODE = "batch.mode";
+    
+    public static String DDL = "ddl";
 
     int rowsPerMessage = 1000;
 
@@ -56,6 +79,8 @@ public class TempRdbms extends AbstractRdbmsComponentRuntime  {
     
     List<String> sqls;
     
+    List<String> ddls;
+    
     int rowReadDuringHandle;
     
     boolean continueOnError = false;
@@ -66,6 +91,7 @@ public class TempRdbms extends AbstractRdbmsComponentRuntime  {
     public void start() {
         TypedProperties properties = getTypedProperties();
         sqls = getSqlStatements(true);
+        ddls = getDdlStatements(false);
 
         this.inMemoryDb = properties.is(IN_MEMORY_DB);
         this.rowsPerMessage = properties.getInt(ROWS_PER_MESSAGE);
@@ -156,29 +182,6 @@ public class TempRdbms extends AbstractRdbmsComponentRuntime  {
             } else {
                 ds.setUrl("jdbc:h2:file:./" + databaseName);
             }
-
-
-             /*使用自定义factory --start--*/
-            TypedProperties props = this.getTypedProperties();
-            String   customFactory =props.get("jdbc.custom.factory");
-            if(customFactory!=null && !"".equals(customFactory.trim())) {
-                try {
-                    Class fc =Class.forName(customFactory);
-                    Method m =fc.getMethod("createNewPlatformInstance",new Class[]{DataSource.class,SqlTemplateSettings.class,boolean.class,boolean.class});
-                    databasePlatform = (IDatabasePlatform)m.invoke(null,ds,new SqlTemplateSettings(), true, false);
-                } catch (ClassNotFoundException e) {
-                    log.error("",e);
-                } catch (NoSuchMethodException e) {
-                    log.error("",e);
-                } catch (InvocationTargetException e) {
-                    log.error("",e);
-                } catch (IllegalAccessException e) {
-                    log.error("",e);
-                }
-            }
-
-            if(databasePlatform==null)
-             /*--end--*/
             databasePlatform = JdbcDatabasePlatformFactory.createNewPlatformInstance(ds, new SqlTemplateSettings(), true, false);
 
             Model inputModel = context.getFlowStep().getComponent().getInputModel();
@@ -186,8 +189,8 @@ public class TempRdbms extends AbstractRdbmsComponentRuntime  {
             for (ModelEntity entity : entities) {
                 Table table = new Table();
                 table.setName(entity.getName());
-                List<ModelAttribute> attributes = entity.getModelAttributes();
-                for (ModelAttribute attribute : attributes) {
+                List<ModelAttrib> attributes = entity.getModelAttributes();
+                for (ModelAttrib attribute : attributes) {
                     DataType dataType = attribute.getDataType();
                     Column column = new Column(attribute.getName());
                     if (dataType.isNumeric()) {
@@ -214,9 +217,29 @@ public class TempRdbms extends AbstractRdbmsComponentRuntime  {
                 
                 databasePlatform.createTables(false, false, table);
             }
+            
+            runDdls();
 
             log(LogLevel.INFO, "Creating databasePlatform with the following url: %s", ds.getUrl());
         }
+    }
+    
+    protected void runDdls() {
+    	if(ddls != null) {
+    		JdbcOperations jdbcTemplate = getJdbcTemplate().getJdbcOperations();
+    		for(String ddl : ddls) {
+    			log(LogLevel.INFO, "Executing ddl %s", ddl);
+    			jdbcTemplate.execute(ddl);
+    		}
+    	}
+    }
+    
+    @Override
+    protected NamedParameterJdbcTemplate getJdbcTemplate() {
+    	DataSource dataSource = databasePlatform.getDataSource();
+        JdbcTemplate template = new JdbcTemplate(dataSource);
+        template.setQueryTimeout(queryTimeout);
+        return new NamedParameterJdbcTemplate(template);
     }
     
     private void alterCaseToMatchLogicalCase(Table table) {

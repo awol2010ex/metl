@@ -35,12 +35,13 @@ import java.util.concurrent.ExecutorService;
 import javax.mail.Message.RecipientType;
 import javax.mail.MessagingException;
 import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.jumpmind.metl.core.model.Agent;
-import org.jumpmind.metl.core.model.AgentFlowDeploymentParameter;
+import org.jumpmind.metl.core.model.AgentFlowDeployParm;
 import org.jumpmind.metl.core.model.AgentParameter;
 import org.jumpmind.metl.core.model.AgentProjectVersionFlowDeployment;
 import org.jumpmind.metl.core.model.Flow;
@@ -348,8 +349,8 @@ public class FlowRuntime {
             params.put(flowParameter.getName(), flowParameter.getDefaultValue());
         }
         
-        List<AgentFlowDeploymentParameter> deployParameters = agentDeployment.getAgentDeployment()
-                .getAgentDeploymentParameters();
+        List<AgentFlowDeployParm> deployParameters = agentDeployment.getAgentDeployment()
+                .getAgentDeploymentParms();
         List<AgentParameter> agentParameters = agent.getAgentParameters();
         if (agentParameters != null) {
             for (AgentParameter agentParameter : agentParameters) {
@@ -359,7 +360,7 @@ public class FlowRuntime {
             }
         }
         if (deployParameters != null) {
-            for (AgentFlowDeploymentParameter deployParameter : deployParameters) {
+            for (AgentFlowDeployParm deployParameter : deployParameters) {
                 if (isNotBlank(deployParameter.getValue())) {
                     params.put(deployParameter.getName(), deployParameter.getValue());
                 }
@@ -494,10 +495,11 @@ public class FlowRuntime {
                 for (Notification notification : notifications) {
                     if (notification.getEventType().equals(eventType.toString())) {
                         log.info("Sending notification '" + notification.getName() + "' of level '"
-                                + notification.getLevel() + "' and type '"
+                                + notification.getNotificationLevel() + "' and type '"
                                 + notification.getNotifyType() + "'");
                         transport = mailSession.getTransport();
                         MimeMessage message = new MimeMessage(mailSession.getSession());
+                        message.setFrom(new InternetAddress(mailSession.getSession().getProperty(MailSession.SETTING_FROM)));
                         message.setSentDate(new Date());
                         message.setRecipients(RecipientType.BCC, notification.getRecipients());
                         message.setSubject(FormatUtils.replaceTokens(notification.getSubject(),

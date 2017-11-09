@@ -42,7 +42,7 @@ import org.jdom2.output.XMLOutputter;
 import org.jdom2.xpath.XPathExpression;
 import org.jdom2.xpath.XPathFactory;
 import org.jdom2.xpath.XPathHelper;
-import org.jumpmind.metl.core.model.ComponentAttributeSetting;
+import org.jumpmind.metl.core.model.ComponentAttribSetting;
 import org.jumpmind.metl.core.model.ComponentEntitySetting;
 import org.jumpmind.metl.core.model.Model;
 import org.jumpmind.metl.core.runtime.ControlMessage;
@@ -191,19 +191,20 @@ public class XmlFormatter extends AbstractXMLComponentRuntime {
             while (!parentStack.isEmpty() && parentStack.peek().level >= entityDocElement.level) {
                 parentStack.pop();
             }
-
-            // TODO: this guys parent entity might be the last entity, not
-            // static
-            // data. What i have below works assuming the entities line up
-            // parent to child
-            // still needs work
+            Element entityElementToAdd = entityDocElement.xmlElement.clone();            
             if (parentStack.isEmpty() || parentStack.peek().level < entityDocElement.level - 1) {
-                fillStackWithStaticParentElements(parentStack, entityDocElement, generatedXml);
+                //if the entity level isn't the root
+                if (!entityElementToAdd.getName().equalsIgnoreCase(templateDoc.getRootElement().getName())) {
+                    fillStackWithStaticParentElements(parentStack, entityDocElement, generatedXml);
+                }
             }
-
-            Element entityElementToAdd = entityDocElement.xmlElement.clone();
-            DocElement parentToAttach = parentStack.peek();
-            parentToAttach.xmlElement.addContent(0,entityElementToAdd);
+            //if the entity level is the root
+            if (entityElementToAdd.getName().equalsIgnoreCase(templateDoc.getRootElement().getName())) {
+                generatedXml.setRootElement(entityElementToAdd);
+            } else {            
+                DocElement parentToAttach = parentStack.peek();
+                parentToAttach.xmlElement.addContent(0,entityElementToAdd);
+            }
             parentStack.push(new DocElement(entityDocElement.level, entityElementToAdd, null,
                     entityDocElement.xpath));
         }
@@ -225,13 +226,13 @@ public class XmlFormatter extends AbstractXMLComponentRuntime {
             XPathExpression<Element> expression = XPathFactory.instance()
                     .compile(firstDocElement.xpath, Filters.element());
             List<Element> matches = expression.evaluate(generatedXml.getRootElement());
-            if (matches.size() != 0) {
+            if (matches.size() != 0 && matches.get(0).getParentElement() != null) {
                 elementToPutOnStack = matches.get(0).getParentElement();
             } else {
                 elementToPutOnStack = generatedXml.getRootElement();
             }
             elementToPutOnStack.removeContent();
-            removeAllAttributes(elementToPutOnStack);
+            removeAllEmptyAttributes(elementToPutOnStack);
             parentStack.push(
                     new DocElement(firstDocElement.level - 1, elementToPutOnStack, null, null));
             restoreNamespaces(generatedXml, namespaces);
@@ -250,7 +251,7 @@ public class XmlFormatter extends AbstractXMLComponentRuntime {
                 // throw some exception here
             }
             elementToPutOnStack.removeContent();
-            removeAllAttributes(elementToPutOnStack);
+            removeAllEmptyAttributes(elementToPutOnStack);
             parentStack.push(
                     new DocElement(firstDocElement.level - 1, elementToPutOnStack, null, null));
             restoreNamespaces(templateDoc, namespaces);
@@ -285,7 +286,7 @@ public class XmlFormatter extends AbstractXMLComponentRuntime {
                 // we have to add an element
                 newElement = templateDocElement.xmlElement.clone();
                 newElement.removeContent();
-                removeAllAttributes(newElement);
+                removeAllEmptyAttributes(newElement);
 
                 if (StringUtils.isEmpty(value)) {
                     if (nullHandling.equalsIgnoreCase(NULL_HANDLING_XML_NIL)) {
@@ -340,7 +341,7 @@ public class XmlFormatter extends AbstractXMLComponentRuntime {
                     if (matches.size() == 0) {
                         Element elementToAdd = templateParentElement.clone();
                         elementToAdd.removeContent();
-                        removeAllAttributes(elementToAdd);
+                        removeAllEmptyAttributes(elementToAdd);
                         parentsToAdd.push(elementToAdd);
                         templateParentElement = templateParentElement.getParentElement();
                     } else {
@@ -384,6 +385,11 @@ public class XmlFormatter extends AbstractXMLComponentRuntime {
                     parent.removeContent(element);
                 } else if (nullHandling.equalsIgnoreCase(NULL_HANDLING_XML_NIL)) {
                     element.setAttribute("nil", "true", getXmlNamespace());
+                    // Remove template example content
+                    element.removeContent();
+                } else if (nullHandling.equalsIgnoreCase(NULL_HANDLING_EMPTY)) {
+                    // Remove template example content
+                    element.removeContent();
                 }
             }
         } else if (object instanceof Attribute) {
@@ -398,11 +404,13 @@ public class XmlFormatter extends AbstractXMLComponentRuntime {
         return Namespace.getNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance");
     }
 
-    private void removeAllAttributes(Element element) {
+    private void removeAllEmptyAttributes(Element element) {
         List<Attribute> attributes = new ArrayList<Attribute>();
         attributes.addAll(element.getAttributes());
         for (Attribute attribute : attributes) {
-            element.removeAttribute(attribute);
+            if (StringUtils.isEmpty(attribute.getValue())) {
+                element.removeAttribute(attribute);
+            }
         }
     }
 
@@ -418,7 +426,7 @@ public class XmlFormatter extends AbstractXMLComponentRuntime {
 
         Map<String, DocElement> attributeLevels = new HashMap<String, DocElement>();
         Map<Element, Namespace> namespaces = removeNamespaces(templateDoc);
-        for (ComponentAttributeSetting compAttributeSetting : getComponent()
+        for (ComponentAttribSetting compAttributeSetting : getComponent()
                 .getAttributeSettings()) {
             if (compAttributeSetting.getName().equals(XML_FORMATTER_XPATH)) {
                 XPathExpression<Object> expression = XPathFactory.instance()

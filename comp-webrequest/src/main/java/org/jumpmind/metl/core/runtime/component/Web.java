@@ -24,13 +24,14 @@ import static org.apache.commons.lang.StringUtils.isNotBlank;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
@@ -41,6 +42,7 @@ import org.jumpmind.metl.core.runtime.Message;
 import org.jumpmind.metl.core.runtime.TextMessage;
 import org.jumpmind.metl.core.runtime.flow.ISendMessageCallback;
 import org.jumpmind.metl.core.runtime.resource.IDirectory;
+import org.jumpmind.metl.core.runtime.resource.IInputStreamWithConnection;
 import org.jumpmind.metl.core.runtime.resource.IOutputStreamWithResponse;
 //import org.jumpmind.metl.core.runtime.resource.Http;
 //import org.jumpmind.metl.core.runtime.resource.HttpDirectory;
@@ -111,6 +113,7 @@ public class Web extends AbstractComponentRuntime {
 		if ((PER_UNIT_OF_WORK.equals(runWhen) && inputMessage instanceof ControlMessage)
 				|| (!PER_UNIT_OF_WORK.equals(runWhen) && !(inputMessage instanceof ControlMessage))) {
 			IDirectory streamable = getResourceReference();
+	        Map<String, Serializable> outputMessageHeaders = new HashMap<String, Serializable>();
 			httpHeaders = getHttpHeaderConfigEntries(inputMessage);
 			httpParameters = getHttpParameterConfigEntries(inputMessage);
 			assembleRelativePathPlusParameters();
@@ -151,20 +154,22 @@ public class Web extends AbstractComponentRuntime {
                             }
                         } else {
                             info("getting content from %s", path);
-                            InputStream is = streamable.getInputStream(path, false, false, httpHeaders, httpParameters);
+                            IInputStreamWithConnection isc = (IInputStreamWithConnection) streamable.getInputStream(path, false, false, httpHeaders, httpParameters);
+                            Map<String, List<String>> responseHdrs = isc.getHttpConnection().getHeaderFields();
+                            outputMessageHeaders.putAll(convertResponseHdrsToMsgHeaders(responseHdrs));
                             try {
-                                String response = IOUtils.toString(is);
+                                String response = IOUtils.toString(isc.getInputStream());                                
                                 if (response != null) {
                                     outputPayload.add(response);
                                 }
                             } finally {
-                                IOUtils.closeQuietly(is);
+                                IOUtils.closeQuietly(isc.getInputStream());
                             }
                         }
 					}
 
 					if (outputPayload.size() > 0) {
-						callback.sendTextMessage(null, outputPayload);
+						callback.sendTextMessage(outputMessageHeaders, outputPayload);
 					}
 				} catch (IOException e) {
 					throw new IoException(String.format("Error writing to %s ", streamable), e);
@@ -173,6 +178,16 @@ public class Web extends AbstractComponentRuntime {
 		} else if (context.getManipulatedFlow().findStartSteps().contains(context.getFlowStep()) && !PER_UNIT_OF_WORK.equals(runWhen)) {
             warn("This component is configured as a start step but the run when is set to %s.  You might want to switch the run when to %s", runWhen, PER_UNIT_OF_WORK);            
         }
+	}
+	
+	private Map<String,String> convertResponseHdrsToMsgHeaders(Map<String, List<String>> responseHeaders) {
+	    Map<String, String> msgHeaders = new HashMap<String, String>();
+	    responseHeaders.forEach((k,v)->{
+	        if (v.size()>0) {
+	            msgHeaders.put(k, v.get(0));
+	        }
+	    });
+	    return msgHeaders;
 	}
 	
     private Map<String, String> getHttpHeaderConfigEntries(Message inputMessage) {

@@ -6,7 +6,7 @@ import hprose.client.HproseTcpClient;
 import hprose.util.concurrent.Action;
 import hprose.util.concurrent.Promise;
 import org.jumpmind.metl.core.model.Model;
-import org.jumpmind.metl.core.model.ModelAttribute;
+import org.jumpmind.metl.core.model.ModelAttrib;
 import org.jumpmind.metl.core.model.ModelEntity;
 import org.jumpmind.metl.core.runtime.EntityData;
 import org.jumpmind.metl.core.runtime.EntityDataMessage;
@@ -76,12 +76,12 @@ public class UnOfficeHproseClient extends AbstractComponentRuntime {
     private Model inputModel ;
     private List<ModelEntity> inputModelEntityList;
     private ModelEntity inputModelEntity;
-    private List<ModelAttribute> inputModelAttributeList;
+    private List<ModelAttrib> inputModelAttributeList;
     /*output model */
     private Model outputModel ;
     private List<ModelEntity> outputModelEntityList;
     private ModelEntity outputModelEntity;
-    private List<ModelAttribute> outputModelAttributeList;
+    private List<ModelAttrib> outputModelAttributeList;
     private Map<String,String> mapToOutputEntityData=new HashMap<String,String>();
     @Override
     public void start() {
@@ -128,7 +128,7 @@ public class UnOfficeHproseClient extends AbstractComponentRuntime {
                 throw new IllegalStateException("No attributes  exists in  the first entity of the output model");
             }
             else{
-                for(ModelAttribute oa :  outputModelAttributeList){
+                for(ModelAttrib oa :  outputModelAttributeList){
                      mapToOutputEntityData.put(oa.getName(),oa.getId());
                 }
             }
@@ -194,7 +194,7 @@ public class UnOfficeHproseClient extends AbstractComponentRuntime {
                             continue;
                         }
                         List<Object> params = new ArrayList<Object>();
-                        for (ModelAttribute ma : inputModelAttributeList) {
+                        for (ModelAttrib ma : inputModelAttributeList) {
                             params.add(row.get(ma.getId()));
                         }
 
