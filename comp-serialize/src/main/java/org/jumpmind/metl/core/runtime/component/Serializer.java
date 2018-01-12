@@ -39,13 +39,16 @@ import org.jumpmind.metl.core.model.ModelEntity;
 import org.jumpmind.metl.core.runtime.EntityData;
 import org.jumpmind.metl.core.runtime.EntityDataMessage;
 import org.jumpmind.metl.core.runtime.Message;
+import org.jumpmind.metl.core.runtime.MisconfiguredException;
 import org.jumpmind.metl.core.runtime.flow.ISendMessageCallback;
 import org.jumpmind.util.FormatUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 
 public class Serializer extends AbstractSerializer {
 
@@ -54,9 +57,16 @@ public class Serializer extends AbstractSerializer {
     @Override
     public void start() {
         super.start();
+        validate();
         payload = new ArrayList<>();
     }
 
+	protected void validate() {
+		if (getComponent().getInputModel() == null) {
+			throw new MisconfiguredException("Input model must be specified");
+		}
+	}
+    
     @Override
     public void handle(Message inputMessage, ISendMessageCallback callback,
             boolean unitOfWorkBoundaryReached) {
@@ -97,58 +107,74 @@ public class Serializer extends AbstractSerializer {
     private String createHierarchicalPayload(ObjectMapper mapper) throws JsonProcessingException {
     		Iterator<EntityData> itr = payload.iterator();
     		Object root;
+    		String rootName=null;
     		if (payload.size() > 1) {
     			root = mapper.createArrayNode();
     			ArrayNode arrayRoot = (ArrayNode)root;
     			while (itr.hasNext()) {
     				EntityData entity = itr.next();
     				ObjectNode node = mapper.createObjectNode();
-    				processHierarchicalEntity(mapper, node, entity);
+    				processHierarchicalEntity(mapper, node, entity, true);
     				arrayRoot.add(node);    				
     			}
     		} else {
     			root = mapper.createObjectNode();
     			ObjectNode objRoot = (ObjectNode)root;
-        		processHierarchicalEntity(mapper, objRoot, itr.next());
+    			if (itr.hasNext()) {
+    				rootName = processHierarchicalEntity(mapper, objRoot, itr.next(), true);
+    			}
     		}
-    		return mapper.writeValueAsString(root);
+    		ObjectWriter writer = mapper.writer();
+    		if (mapper instanceof XmlMapper) {
+        		return writer.withRootName(rootName).writeValueAsString(root);
+    		} else {
+    			return mapper.writeValueAsString(root);
+    		}
     }
     
     @SuppressWarnings("unchecked")
-	private void processHierarchicalEntity(ObjectMapper mapper, ObjectNode parentNode, EntityData entity) {
+	private String processHierarchicalEntity(ObjectMapper mapper, ObjectNode parentNode, EntityData entity, boolean isRoot) {
     		ObjectNode childNode=null;
     		String entityDesc=null;
-    		boolean root=false;
     		for (Map.Entry<String, Object> entry : entity.entrySet()) {
     			if (childNode == null) {
         			entityDesc = getInputModel().getEntityById(getInputModel().getAttributeById(entry.getKey()).getEntityId()).getName();    				
-	    			if (parentNode.size() == 0) {
-	    				root=true;
-	    				childNode = parentNode.putObject(entityDesc);
+	    			if (isRoot) {
+	    				//childNode = parentNode.putObject(entityDesc);
+	    				childNode = parentNode;
 	    			} else {
 	    				childNode = mapper.createObjectNode();
 	    			}
     			}
     			if (entry.getValue() instanceof EntityData) {
-    				processHierarchicalEntity(mapper, childNode, (EntityData)entry.getValue());
+    				processHierarchicalEntity(mapper, childNode, (EntityData)entry.getValue(), false);
     			} else if (entry.getValue() instanceof ArrayList) {
     				childNode.set(getInputModel().getAttributeById(entry.getKey()).getName(), 
     						processHierarchicalEntityArray(mapper, parentNode, (List<EntityData>)entry.getValue()));
     			}
     			else {
-	    			childNode.put(getInputModel().getAttributeById(entry.getKey()).getName(), (String)entry.getValue());
+                String stringValue = null;
+                Object value = entry.getValue();
+                if (value instanceof Date) {
+                    stringValue = FormatUtils.TIMESTAMP_FORMATTER.format((Date) value);
+                }
+                if (value != null) {
+                    stringValue = value.toString();
+                }    				
+	    			childNode.put(getInputModel().getAttributeById(entry.getKey()).getName(), stringValue);
     			}
  		}
-    		if (!root) {
+    		if (!isRoot) {
     			parentNode.set(entityDesc, childNode);
     		}
+    		return entityDesc;
     }
     
     private ArrayNode processHierarchicalEntityArray(ObjectMapper mapper, ObjectNode parentNode, List<EntityData> entityDatas) {
     		ArrayNode arrayNode = mapper.createArrayNode();
     		for (EntityData entityData : entityDatas) {
     			ObjectNode node = mapper.createObjectNode();
-    			processHierarchicalEntity(mapper, node, entityData);
+    			processHierarchicalEntity(mapper, node, entityData, true);
     			arrayNode.add(node);
     		}    		
     		return arrayNode;
