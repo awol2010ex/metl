@@ -105,6 +105,8 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
     boolean usePage =false;
     long pageinePageSize= 10000L;
 
+    boolean batchUseSleep =false; //batch query sleep sometime for not too mush memery
+    long batchSleepTime=300L;//batch query sleep sometime for not too mush memery
     @Override
     public void start() {
         TypedProperties properties = getTypedProperties();
@@ -119,6 +121,10 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
 
         usePage= Boolean.valueOf( properties.get ("pagine.usepage", "false"));
         pageinePageSize =properties.getLong("pagine.pagesize",10000L);
+
+
+        batchUseSleep= Boolean.valueOf( properties.get ("batch.usesleep", "false"));
+        batchSleepTime =properties.getLong("batch.sleeptime",300L);
 
 
         Datasource datasource =(Datasource)this.getResourceRuntime();
@@ -541,6 +547,15 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
                 if (outputRecCount++ % rowsPerMessage == 0 && payload != null && !payload.isEmpty()) {
                     callback.sendEntityDataMessage(messageHeaders, payload);
                     payload.clear();
+
+                    ////batch query sleep sometime for not too mush memery
+                    if(batchUseSleep){
+                        try {
+                            Thread.sleep(batchSleepTime);
+                        } catch (InterruptedException e) {
+                            log.error("",e);
+                        }
+                    }
                 }
 
                 getComponentStatistics().incrementNumberEntitiesProcessed(threadNumber);

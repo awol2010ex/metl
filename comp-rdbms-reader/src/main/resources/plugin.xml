@@ -106,6 +106,20 @@
         <name>Sending Entitys Page Size</name>
         <defaultValue>10000</defaultValue>
       </setting>
+
+      <setting id='batch.sleeptime'
+               required='false'
+               type='long'>
+        <name>Sending Entitys Sleep time(ms)</name>
+        <defaultValue>300</defaultValue>
+      </setting>
+
+      <setting id='batch.usesleep'
+               required='false'
+               type='boolean'>
+        <name>Sending Entitys sleep</name>
+        <defaultValue>false</defaultValue>
+      </setting>
     </settings>
   </component>
 </definitions>
