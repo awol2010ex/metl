@@ -99,7 +99,7 @@ public class ApplicationContext implements Serializable {
     ISecurityService securityService;
     
     @Autowired
-    IOperationsService operationsSerivce;
+    IOperationsService operationsService;
     
     @Autowired
     IPluginService pluginService;
@@ -202,8 +202,8 @@ public class ApplicationContext implements Serializable {
         this.clipboard = clipboard;
     }
     
-    public IOperationsService getOperationsSerivce() {
-        return operationsSerivce;
+    public IOperationsService getOperationsService() {
+        return operationsService;
     }
     
     public IPluginService getPluginService() {
