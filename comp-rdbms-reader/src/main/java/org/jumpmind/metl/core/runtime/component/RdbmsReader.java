@@ -185,7 +185,7 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
                 resultSetToEntityDataConverter.setSqlToExecute(sqlToExecute);
 
 
-                if(usePage && DatabaseNamesConstants.DB2.equals( platform.getName()) && PER_UNIT_OF_WORK.equals(runWhen)){
+                if(usePage  && PER_UNIT_OF_WORK.equals(runWhen)){
                     Long total =template.queryForObject("select count(1) from ( "+sqlToExecute+" )t ",paramMap,Long.class);
 
                     if (total > 0) {
@@ -194,7 +194,7 @@ public class RdbmsReader extends AbstractRdbmsComponentRuntime {
                             totalPage--;
                         }
                         for(int index=0;index<totalPage;index++){
-                            String pageSQL ="select t.* from (select t.*,rownumber() over() as $$ROWINDEX  from ("+sql+") t ) t where $$ROWINDEX >="+(index*pageinePageSize+1)+"  and  $$ROWINDEX<  "+(index*pageinePageSize+pageinePageSize+1);
+                            String pageSQL ="select t.* from (select t.*,row_number() over() as $$ROWINDEX  from ("+sql+") t ) t where $$ROWINDEX >="+(index*pageinePageSize+1)+"  and  $$ROWINDEX<  "+(index*pageinePageSize+pageinePageSize+1);
                             template.query(pageSQL, paramMap, resultSetToEntityDataConverter);
                             outboundPayload.clear();
                         }
